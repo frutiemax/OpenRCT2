@@ -104,15 +104,14 @@ enum WINDOW_STAFF_LIST_WIDGET_IDX {
     WIDX_STAFF_LIST_MAP,
 };
 
-constexpr int32_t WW = 320;
-constexpr int32_t WH = 270;
+static constexpr const rct_string_id WINDOW_TITLE = STR_STAFF;
+static constexpr const int32_t WW = 320;
+static constexpr const int32_t WH = 270;
 constexpr int32_t MAX_WW = 500;
 constexpr int32_t MAX_WH = 450;
 
 static rct_widget window_staff_list_widgets[] = {
-    { WWT_FRAME,            0,  0,          319,        0,      269,    0xFFFFFFFF,         STR_NONE },                         // panel / background
-    { WWT_CAPTION,          0,  1,          318,        1,      14,     STR_STAFF,              STR_WINDOW_TITLE_TIP },             // title bar
-    { WWT_CLOSEBOX,         0,  307,        317,        2,      13,     STR_CLOSE_X,            STR_CLOSE_WINDOW_TIP },             // close button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,          319,        43,     269,    0xFFFFFFFF,         STR_NONE },                         // tab content panel
     { WWT_TAB,              1,  3,          33,         17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,   STR_STAFF_HANDYMEN_TAB_TIP },       // handymen tab
     { WWT_TAB,              1,  34,         64,         17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,   STR_STAFF_MECHANICS_TAB_TIP },      // mechanics tab
@@ -201,7 +200,7 @@ void WindowStaffListRefresh()
         StaffList.push_back(spriteIndex);
     }
 
-    std::sort(StaffList.begin(), StaffList.end(), [](const uint16_t a, const uint16_t b) { return peep_compare(&a, &b) < 0; });
+    std::sort(StaffList.begin(), StaffList.end(), [](const uint16_t a, const uint16_t b) { return peep_compare(a, b) < 0; });
 }
 
 static void window_staff_list_cancel_tools(rct_window* w)
@@ -297,7 +296,7 @@ static void window_staff_list_mousedown(rct_window* w, rct_widgetindex widgetInd
             if (_windowStaffListSelectedTab == newSelectedTab)
                 break;
 
-            _windowStaffListSelectedTab = (uint8_t)newSelectedTab;
+            _windowStaffListSelectedTab = static_cast<uint8_t>(newSelectedTab);
             w->Invalidate();
             w->scrolls[0].v_top = 0;
             window_staff_list_cancel_tools(w);
@@ -418,7 +417,7 @@ static void window_staff_list_tooldown(rct_window* w, rct_widgetindex widgetInde
         }
         else
         {
-            set_format_arg(0, rct_string_id, StaffNamingConvention[selectedPeepType].plural);
+            Formatter::Common().Add<rct_string_id>(StaffNamingConvention[selectedPeepType].plural);
             context_show_error(STR_NO_THING_IN_PARK_YET, STR_NONE);
         }
     }
@@ -530,9 +529,9 @@ void window_staff_list_invalidate(rct_window* w)
     if (tabIndex < 3)
     {
         window_staff_list_widgets[WIDX_STAFF_LIST_UNIFORM_COLOUR_PICKER].type = WWT_COLOURBTN;
-        window_staff_list_widgets[WIDX_STAFF_LIST_UNIFORM_COLOUR_PICKER].image = SPRITE_ID_PALETTE_COLOUR_1(
-                                                                                     (uint32_t)staff_get_colour(tabIndex))
-            | IMAGE_TYPE_TRANSPARENT | SPR_PALETTE_BTN;
+        auto spriteIdPalette = SPRITE_ID_PALETTE_COLOUR_1(static_cast<uint32_t>(staff_get_colour(tabIndex)));
+        window_staff_list_widgets[WIDX_STAFF_LIST_UNIFORM_COLOUR_PICKER].image = spriteIdPalette | IMAGE_TYPE_TRANSPARENT
+            | SPR_PALETTE_BTN;
     }
     if (_quick_fire_mode)
         w->pressed_widgets |= (1ULL << WIDX_STAFF_LIST_QUICK_FIRE);
@@ -625,7 +624,7 @@ void window_staff_list_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
     if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
     {
-        set_format_arg(0, money32, gStaffWageTable[selectedTab]);
+        Formatter::Common().Add<money32>(gStaffWageTable[selectedTab]);
         gfx_draw_string_left(
             dpi, STR_COST_PER_MONTH, gCommonFormatArgs, COLOUR_BLACK, w->windowPos.x + w->width - 155, w->windowPos.y + 0x20);
     }
@@ -644,8 +643,9 @@ void window_staff_list_paint(rct_window* w, rct_drawpixelinfo* dpi)
         staffTypeStringId = StaffNamingConvention[selectedTab].singular;
     }
 
-    set_format_arg(0, uint16_t, static_cast<uint16_t>(StaffList.size()));
-    set_format_arg(2, rct_string_id, staffTypeStringId);
+    auto ft = Formatter::Common();
+    ft.Add<uint16_t>(StaffList.size());
+    ft.Add<rct_string_id>(staffTypeStringId);
 
     gfx_draw_string_left(
         dpi, STR_STAFF_LIST_COUNTER, gCommonFormatArgs, COLOUR_BLACK, w->windowPos.x + 4,
@@ -701,10 +701,10 @@ void window_staff_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32_
             }
 
             peep->FormatNameTo(gCommonFormatArgs);
-            gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, 0, y, nameColumnSize);
+            gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, { 0, y }, nameColumnSize);
 
             peep->FormatActionTo(gCommonFormatArgs);
-            gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, actionOffset, y, actionColumnSize);
+            gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, { actionOffset, y }, actionColumnSize);
 
             // True if a patrol path is set for the worker
             if (gStaffModes[peep->staff_id] & 2)

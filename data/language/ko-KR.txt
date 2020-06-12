@@ -1944,8 +1944,8 @@ STR_2728    :{UINT16}시간 {UINT16}분
 STR_2729    :{UINT16}시간 {UINT16}분
 STR_2730    :{UINT16}시간 {UINT16}분
 STR_2731    :{UINT16}시간 {UINT16}분
-STR_2732    :{COMMA16}피트
-STR_2733    :{COMMA16}m
+STR_2732    :{COMMA32}피트
+STR_2733    :{COMMA32}m
 STR_2734    :{COMMA16}mph
 STR_2735    :{COMMA16}km/h
 STR_2736    :{POP16}{COMMA16}년 {PUSH16}{PUSH16}{MONTH}
@@ -1981,7 +1981,7 @@ STR_2778    :»{MOVE_X}{SMALLFONT}{STRING}
 STR_2779    :외부화면 #{COMMA16}
 STR_2780    :추가 외부화면
 # End of new strings
-STR_2781    :{STRINGID}:{MOVE_X}{195}{STRINGID}
+STR_2781    :{STRINGID}:
 STR_2782    :SHIFT + 
 STR_2783    :CTRL + 
 STR_2784    :키보드 단축키 변경
@@ -2428,7 +2428,7 @@ STR_3330    :공원이 소유한 땅이 하나도 없습니다
 STR_3331    :공원 입구에서 지도 가장자리로 이어지는 길이 이어지지 않았거나 너무 복잡합니다. 1칸 너비의 길을 코너나 교차로가 최대한 없도록 하여 만들어야 합니다.
 STR_3332    :공원 입구가 잘못된 방향을 향하고 있거나 지도 가장자리로 가는 길이 없습니다
 STR_3333    :게임 저장시 사용한 오브젝트를 같이 포함하여 저장
-STR_3334    :{SMALLFONT}{BLACK}필요한 경우 내장된 오브젝트(기본 오브젝트가 아닌 사용자가 추가한 오브젝트)를 게임 저장 파일이나 시나리오 파일 내부에 함께 저장합니다. 이러면 그 추가 오브젝트를 갖고 있지 않은 다른 사람이 이 파일을 불러올 때 자동으로 그 오브젝트를 설치하게 됩니다. 다만 게임 저장 파일 용량이 늘어납니다
+STR_3334    :{SMALLFONT}{BLACK}필요한 경우 커스텀 오브젝트(기본 오브젝트가 아닌 사용자가 추가한 오브젝트)를 게임 저장 파일이나 시나리오 파일 내부에 함께 저장합니다. 이러면 추가 오브젝트를 갖고 있지 않은 다른 사람이 이 파일을 불러올 때 자동으로 그 오브젝트를 설치하게 됩니다. 다만 게임 저장 파일 용량이 늘어납니다
 STR_3335    :트랙 디자이너 - 놀이기구 종류 & 차량을 선택하세요
 STR_3336    :트랙 디자인 관리자 - 놀이기구 종류를 선택하세요
 STR_3338    :{BLACK}커스텀 디자인 구조
@@ -2527,19 +2527,6 @@ STR_5160    :{POP16}{MONTH} {PUSH16}{PUSH16}{STRINGID}, {POP16}{COMMA16}년
 STR_5161    :날짜 형식:
 STR_5162    :일/월/년
 STR_5163    :월/일/년
-STR_5164    :트위치 채널 이름
-STR_5165    :손님 이름을 팔로워 이름을 따서 붙이기
-STR_5166    :{SMALLFONT}{BLACK}트위치 채널의 팔로워 이름을 따서 손님 이름으로 사용합니다
-STR_5167    :팔로워 손님 추적
-STR_5168    :{SMALLFONT}{BLACK}채널의 트위치 팔로워 이름을 딴 손님을 추적합니다
-STR_5169    :손님 이름을 트위치 채팅 접속자 이름을 따서 붙이기
-STR_5170    :{SMALLFONT}{BLACK}트위치 채팅의 접속자 이름을 따서 손님 이름으로 사용합니다
-STR_5171    :채팅 인원 추적
-STR_5172    :{SMALLFONT}{BLACK}트위치 채팅에 참여하고 있는 사람들의 이름을 딴 손님의 행적을 추적합니다
-STR_5173    :트위치 채팅 내용을 뉴스로 전송
-STR_5174    :{SMALLFONT}{BLACK}트위치의 채팅 메시지를 !news를 이용하여 게임 메시지로 알려줍니다
-STR_5175    :트위치 채널 이름 입력
-STR_5176    :트위치 통합 허용
 STR_5177    :전체 화면 모드:
 STR_5178    :{SMALLFONT}{BLACK}재정 치트를 보여줍니다
 STR_5179    :{SMALLFONT}{BLACK}손님 치트를 보여줍니다
@@ -2634,7 +2621,6 @@ STR_5267    :{SMALLFONT}{BLACK}문화와 단위
 STR_5268    :{SMALLFONT}{BLACK}오디오
 STR_5269    :{SMALLFONT}{BLACK}제어 및 인터페이스
 STR_5270    :{SMALLFONT}{BLACK}기타
-STR_5271    :{SMALLFONT}{BLACK}트위치
 STR_5272    :{SMALLFONT}{BLACK}소형 조형물
 STR_5273    :{SMALLFONT}{BLACK}대형 조형물
 STR_5274    :{SMALLFONT}{BLACK}보도
@@ -3174,7 +3160,6 @@ STR_5848    :{SMALLFONT}{BLACK}사용자 타이틀 시퀀스를 생성하고 관
 STR_5849    :{SMALLFONT}{BLACK}새로 고용한 직원을 자동으로 보도 위에 놓습니다.
 STR_5850    :<removed string - do not use>
 STR_5851    :{SMALLFONT}{BLACK}새로 만든 놀이기구에 기본적으로 설정할 점검 간격을 설정합니다.
-STR_5852    :{SMALLFONT}{BLACK}트위치 통합에 사용할 트위치TV 채널 명을 설정합니다.
 STR_5853    :{SMALLFONT}{BLACK}효과음 켜기/끄기
 STR_5854    :{SMALLFONT}{BLACK}놀이기구 음악 켜기/끄기
 STR_5855    :{SMALLFONT}{BLACK}전체화면, 창 모드, 전체화면 (창모드) 중에서 선택합니다.
@@ -3358,7 +3343,7 @@ STR_6033    :RCT1 설치 경로:
 STR_6034    :{SMALLFONT}{BLACK}{STRING}
 STR_6035    :RCT1이 설치된 폴더를 선택하세요
 STR_6036    :{SMALLFONT}{BLACK}초기화
-STR_6037    :RCT1이 설치된 폴더를 올바르게 선택해주세요
+STR_6037    :선택한 폴더에는 RollerCoaster Tycoon 1이 올바르게 설치되어 있지 않습니다.
 STR_6038    :{SMALLFONT}{BLACK}RCT1을 설치했다면, 이 설정을 이용해서 시나리오나 음악 등을 불러오기 위해 RCT1이 설치된 폴더를 지정하세요.
 STR_6039    :{SMALLFONT}{BLACK}빠른 놀이기구 파괴
 STR_6040    :시나리오 설정 편집
@@ -3573,9 +3558,6 @@ STR_6248    :{WINDOW_COLOUR_1}{STRINGID} 놀이기구를 {CURRENCY}에 재단장
 STR_6249    :{WINDOW_COLOUR_1}{STRINGID} 놀이기구를 재단장하시겠습니까?
 STR_6250    :{WINDOW_COLOUR_1}{STRINGID} 놀이기구를 완전히 파괴하고 {CURRENCY}만큼을 회수하시겠습니까?
 STR_6251    :놀이기구에 아직 손님이 남아있습니다
-STR_6252    :트위치 API URL
-STR_6253    :{SMALLFONT}{BLACK}트위치 통합 API의 URL을 지정합니다. 트위치 통합 기능을 사용하려면 이 항목을 입력해야 합니다.
-STR_6254    :트위치 통합 API의 URL:
 STR_6255    :URL이 올바르지 않습니다
 STR_6256    :렌더링 효과
 STR_6257    :반투명하게
@@ -3685,6 +3667,15 @@ STR_6360    :{SMALLFONT}{BLACK}{COMMA32}
 STR_6361    :차량 조명 효과 (실험적 기능)
 STR_6362    :{SMALLFONT}{BLACK}이 설정을 켜면, 밤에 트랙형 놀이기구의 차량에 조명이 들어옵니다.
 STR_6363    :텍스트를 클립보드에 복사하였습니다
+STR_6364    :{RED}{COMMA16}명의 손님이 {STRINGID} 사고로 사망하였습니다!
+STR_6365    :놀이기구 사상자
+STR_6366    :끼거나 움직이지 않는 놀이기구
+STR_6367    :{WINDOW_COLOUR_2}애니메이션 프레임:
+STR_6368    :호환성의 이유로, OpenRCT2를 Wine에서 실행하는 것을 권장하지 않습니다. OpenRCT2는 macOS, Linux, FreeBSD, OpenBSD에서 실행하는 것을 기본적으로 지원합니다.
+STR_6369    :올바르지 않은 높이에 트랙 짓기 허용
+STR_6370    :{SMALLFONT}{BLACK}어떤 높이에나 트랙 조각을 놓을 수 있게 됩니다
+STR_6371    :설정한 경로에 RollerCoaster Tycoon 1이 설치되어 있지만, "csg1i.dat" 파일이 존재하지 않습니다. RollerCoaster Tycoon 1 CD 안의 "Data" 폴더에서 이 파일을 복사해서 RollerCoaster Tycoon 1을 설치한 하드 디스크 위치에 복사해야 합니다.
+STR_6372    :설정한 경로에 RollerCoaster Tycoon 1이 설치되어 있지만, 버전이 알맞지 않습니다. RollerCoaster Tycoon 1의 에셋을 사용하려면 OpenRCT2는 루피 랜드스케이프나 RCT 디럭스가 필요합니다.
 
 #############
 # Scenarios #
@@ -3764,7 +3755,7 @@ STR_DTLS    :비밀스런 숲 속 언덕에 처음부터 놀이공원을 건설�
 <Pacific Pyramids>
 STR_SCNR    :Pacific Pyramids
 STR_PARK    :평화로운 피라미드
-STR_DTLS    :이집트 유적 관광지를 번창한 놀이공원으로 바꿔 보세요.
+STR_DTLS    :이집트 유적 관광지를 번창한 놀이공원으로 바꿔보세요.
 
 <Crumbly Woods>
 STR_SCNR    :Crumbly Woods

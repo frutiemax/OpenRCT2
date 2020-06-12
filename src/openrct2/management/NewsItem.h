@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -25,7 +25,8 @@ enum
     NEWS_ITEM_RESEARCH,
     NEWS_ITEM_PEEPS,
     NEWS_ITEM_AWARD,
-    NEWS_ITEM_GRAPH
+    NEWS_ITEM_GRAPH,
+    NEWS_ITEM_TYPE_COUNT
 };
 
 enum
@@ -51,13 +52,65 @@ struct NewsItem
     uint16_t MonthYear;
     uint8_t Day;
     utf8 Text[256];
+
+    constexpr bool IsEmpty() const noexcept
+    {
+        return Type == NEWS_ITEM_NULL;
+    }
 };
 
-#define MAX_NEWS_ITEMS 61
+constexpr int32_t NEWS_ITEM_HISTORY_START = 11;
+constexpr int32_t MAX_NEWS_ITEMS_ARCHIVE = 50;
+constexpr int32_t MAX_NEWS_ITEMS = NEWS_ITEM_HISTORY_START + MAX_NEWS_ITEMS_ARCHIVE;
 
 extern const uint8_t news_type_properties[10];
 
-extern NewsItem gNewsItems[MAX_NEWS_ITEMS];
+struct NewsItemQueue
+{
+    NewsItem& operator[](size_t index);
+    const NewsItem& operator[](size_t index) const;
+    NewsItem* At(int32_t index);
+    const NewsItem* At(int32_t index) const;
+    bool IsEmpty() const;
+    void Init();
+    uint16_t IncrementTicks();
+    NewsItem& Current();
+    const NewsItem& Current() const;
+    NewsItem& Oldest();
+    const NewsItem& Oldest() const;
+    bool CurrentShouldBeArchived() const;
+    void ArchiveCurrent();
+    NewsItem* FirstOpenOrNewSlot();
+
+    template<typename Predicate> void ForeachRecentNews(Predicate&& p)
+    {
+        for (auto& newsItem : Recent)
+        {
+            if (newsItem.IsEmpty())
+                break;
+            p(newsItem);
+        }
+    }
+
+    template<typename Predicate> void ForeachArchivedNews(Predicate&& p)
+    {
+        for (auto& newsItem : Archived)
+        {
+            if (newsItem.IsEmpty())
+                break;
+            p(newsItem);
+        }
+    }
+
+private:
+    int32_t RemoveTime() const;
+    void AppendToArchive(NewsItem& item);
+
+    NewsItem Recent[NEWS_ITEM_HISTORY_START];
+    NewsItem Archived[MAX_NEWS_ITEMS_ARCHIVE];
+};
+
+extern NewsItemQueue gNewsItems;
 
 void news_item_init_queue();
 
@@ -81,3 +134,4 @@ bool news_item_is_queue_empty();
 bool news_item_is_valid_idx(int32_t index);
 
 void news_item_add_to_queue_custom(NewsItem* newNewsItem);
+void news_item_remove(int32_t index);

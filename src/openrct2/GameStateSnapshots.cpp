@@ -1,3 +1,12 @@
+/*****************************************************************************
+ * Copyright (c) 2014-2020 OpenRCT2 developers
+ *
+ * For a complete list of all authors, please refer to contributors.md
+ * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
+ *
+ * OpenRCT2 is licensed under the GNU General Public License version 3.
+ *****************************************************************************/
+
 #include "GameStateSnapshots.h"
 
 #include "core/CircularBuffer.h"
@@ -40,9 +49,9 @@ struct GameStateSnapshot_t
             {
                 if (sprites[i].generic.sprite_identifier == SPRITE_IDENTIFIER_NULL)
                     continue;
-                indexTable.push_back((uint32_t)i);
+                indexTable.push_back(static_cast<uint32_t>(i));
             }
-            numSavedSprites = (uint32_t)indexTable.size();
+            numSavedSprites = static_cast<uint32_t>(indexTable.size());
         }
 
         ds << numSavedSprites;
@@ -100,7 +109,7 @@ struct GameStateSnapshot_t
     }
 };
 
-struct GameStateSnapshots : public IGameStateSnapshots
+struct GameStateSnapshots final : public IGameStateSnapshots
 {
     virtual void Reset() override final
     {
@@ -125,7 +134,7 @@ struct GameStateSnapshots : public IGameStateSnapshots
     {
         snapshot.SerialiseSprites(get_sprite(0), MAX_SPRITES, true);
 
-        // log_info("Snapshot size: %u bytes", (uint32_t)snapshot.storedSprites.GetLength());
+        // log_info("Snapshot size: %u bytes", static_cast<uint32_t>(snapshot.storedSprites.GetLength()));
     }
 
     virtual const GameStateSnapshot_t* GetLinkedSnapshot(uint32_t tick) const override final
@@ -171,7 +180,7 @@ struct GameStateSnapshots : public IGameStateSnapshots
         std::memcpy(&valB, &spriteCmp.field, sizeof(struc::field));                                                            \
         uintptr_t offset = reinterpret_cast<uintptr_t>(&spriteBase.field) - reinterpret_cast<uintptr_t>(&spriteBase);          \
         changeData.diffs.push_back(                                                                                            \
-            GameStateSpriteChange_t::Diff_t{ (size_t)offset, sizeof(struc::field), #struc, #field, valA, valB });              \
+            GameStateSpriteChange_t::Diff_t{ static_cast<size_t>(offset), sizeof(struc::field), #struc, #field, valA, valB }); \
     }
 
     void CompareSpriteDataCommon(
@@ -284,27 +293,27 @@ struct GameStateSnapshots : public IGameStateSnapshots
         COMPARE_FIELD(Peep, no_action_frame_num);
         COMPARE_FIELD(Peep, litter_count);
         COMPARE_FIELD(Peep, time_on_ride);
-        COMPARE_FIELD(Peep, disgusting_count);
-        COMPARE_FIELD(Peep, paid_to_enter);
-        COMPARE_FIELD(Peep, paid_on_rides);
-        COMPARE_FIELD(Peep, paid_on_food);
-        COMPARE_FIELD(Peep, paid_on_souvenirs);
-        COMPARE_FIELD(Peep, no_of_food);
-        COMPARE_FIELD(Peep, no_of_drinks);
-        COMPARE_FIELD(Peep, no_of_souvenirs);
-        COMPARE_FIELD(Peep, vandalism_seen);
-        COMPARE_FIELD(Peep, voucher_type);
-        COMPARE_FIELD(Peep, voucher_arguments);
-        COMPARE_FIELD(Peep, surroundings_thought_timeout);
-        COMPARE_FIELD(Peep, angriness);
-        COMPARE_FIELD(Peep, time_lost);
-        COMPARE_FIELD(Peep, days_in_queue);
-        COMPARE_FIELD(Peep, balloon_colour);
-        COMPARE_FIELD(Peep, umbrella_colour);
-        COMPARE_FIELD(Peep, hat_colour);
-        COMPARE_FIELD(Peep, favourite_ride);
-        COMPARE_FIELD(Peep, favourite_ride_rating);
-        COMPARE_FIELD(Peep, item_standard_flags);
+        COMPARE_FIELD(Peep, DisgustingCount);
+        COMPARE_FIELD(Peep, PaidToEnter);
+        COMPARE_FIELD(Peep, PaidOnRides);
+        COMPARE_FIELD(Peep, PaidOnFood);
+        COMPARE_FIELD(Peep, PaidOnSouvenirs);
+        COMPARE_FIELD(Peep, AmountOfFood);
+        COMPARE_FIELD(Peep, AmountOfDrinks);
+        COMPARE_FIELD(Peep, AmountOfSouvenirs);
+        COMPARE_FIELD(Peep, VandalismSeen);
+        COMPARE_FIELD(Peep, VoucherType);
+        COMPARE_FIELD(Peep, VoucherArguments);
+        COMPARE_FIELD(Peep, SurroundingsThoughtTimeout);
+        COMPARE_FIELD(Peep, Angriness);
+        COMPARE_FIELD(Peep, TimeLost);
+        COMPARE_FIELD(Peep, DaysInQueue);
+        COMPARE_FIELD(Peep, BalloonColour);
+        COMPARE_FIELD(Peep, UmbrellaColour);
+        COMPARE_FIELD(Peep, HatColour);
+        COMPARE_FIELD(Peep, FavouriteRide);
+        COMPARE_FIELD(Peep, FavouriteRideRating);
+        COMPARE_FIELD(Peep, ItemStandardFlags);
     }
 
     void CompareSpriteDataVehicle(
@@ -329,10 +338,10 @@ struct GameStateSnapshots : public IGameStateSnapshots
         COMPARE_FIELD(Vehicle, var_44);
         COMPARE_FIELD(Vehicle, mass);
         COMPARE_FIELD(Vehicle, update_flags);
-        COMPARE_FIELD(Vehicle, swing_sprite);
+        COMPARE_FIELD(Vehicle, SwingSprite);
         COMPARE_FIELD(Vehicle, current_station);
-        COMPARE_FIELD(Vehicle, swinging_car_var_0);
-        COMPARE_FIELD(Vehicle, var_4E);
+        COMPARE_FIELD(Vehicle, SwingPosition);
+        COMPARE_FIELD(Vehicle, SwingSpeed);
         COMPARE_FIELD(Vehicle, status);
         COMPARE_FIELD(Vehicle, sub_state);
         for (int i = 0; i < 32; i++)
@@ -391,12 +400,12 @@ struct GameStateSnapshots : public IGameStateSnapshots
     void CompareSpriteDataMoneyEffect(
         const MoneyEffect& spriteBase, const MoneyEffect& spriteCmp, GameStateSpriteChange_t& changeData) const
     {
-        COMPARE_FIELD(MoneyEffect, move_delay);
-        COMPARE_FIELD(MoneyEffect, num_movements);
-        COMPARE_FIELD(MoneyEffect, vertical);
-        COMPARE_FIELD(MoneyEffect, value);
-        COMPARE_FIELD(MoneyEffect, offset_x);
-        COMPARE_FIELD(MoneyEffect, wiggle);
+        COMPARE_FIELD(MoneyEffect, MoveDelay);
+        COMPARE_FIELD(MoneyEffect, NumMovements);
+        COMPARE_FIELD(MoneyEffect, Vertical);
+        COMPARE_FIELD(MoneyEffect, Value);
+        COMPARE_FIELD(MoneyEffect, OffsetX);
+        COMPARE_FIELD(MoneyEffect, Wiggle);
     }
 
     void CompareSpriteDataSteamParticle(
@@ -517,7 +526,7 @@ struct GameStateSnapshots : public IGameStateSnapshots
         std::vector<rct_sprite> spritesBase = BuildSpriteList(const_cast<GameStateSnapshot_t&>(base));
         std::vector<rct_sprite> spritesCmp = BuildSpriteList(const_cast<GameStateSnapshot_t&>(cmp));
 
-        for (uint32_t i = 0; i < (uint32_t)spritesBase.size(); i++)
+        for (uint32_t i = 0; i < static_cast<uint32_t>(spritesBase.size()); i++)
         {
             GameStateSpriteChange_t changeData;
             changeData.spriteIndex = i;
@@ -650,8 +659,8 @@ struct GameStateSnapshots : public IGameStateSnapshots
                     snprintf(
                         tempBuffer, sizeof(tempBuffer),
                         "  %s::%s, len = %u, offset = %u, left = 0x%.16llX, right = 0x%.16llX\n", diff.structname,
-                        diff.fieldname, (uint32_t)diff.length, (uint32_t)diff.offset, (unsigned long long)diff.valueA,
-                        (unsigned long long)diff.valueB);
+                        diff.fieldname, static_cast<uint32_t>(diff.length), static_cast<uint32_t>(diff.offset),
+                        static_cast<unsigned long long>(diff.valueA), static_cast<unsigned long long>(diff.valueB));
                     outputBuffer += tempBuffer;
                 }
             }

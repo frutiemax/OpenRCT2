@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -28,6 +28,13 @@ public:
         , _rideIndex(rideIndex)
         , _mazeEntry(mazeEntry)
     {
+    }
+
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit(_loc);
+        visitor.Visit("ride", _rideIndex);
+        visitor.Visit("mazeEntry", _mazeEntry);
     }
 
     void Serialise(DataSerialiser & stream) override
@@ -93,7 +100,7 @@ public:
                 { _loc.ToTileStart(), baseHeight, clearanceHeight }, &map_place_non_scenery_clear_func, { 0b1111, 0 },
                 GetFlags(), &clearCost, CREATE_CROSSING_MODE_NONE))
         {
-            return MakeResult(GA_ERROR::NO_CLEARANCE, res->ErrorTitle, gGameCommandErrorText, gCommonFormatArgs);
+            return MakeResult(GA_ERROR::NO_CLEARANCE, res->ErrorTitle.GetStringId(), gGameCommandErrorText, gCommonFormatArgs);
         }
 
         if (gMapGroundFlags & ELEMENT_IS_UNDERWATER)
@@ -162,7 +169,7 @@ public:
                 { _loc.ToTileStart(), baseHeight, clearanceHeight }, &map_place_non_scenery_clear_func, { 0b1111, 0 },
                 GetFlags() | GAME_COMMAND_FLAG_APPLY, &clearCost, CREATE_CROSSING_MODE_NONE))
         {
-            return MakeResult(GA_ERROR::NO_CLEARANCE, res->ErrorTitle, gGameCommandErrorText, gCommonFormatArgs);
+            return MakeResult(GA_ERROR::NO_CLEARANCE, res->ErrorTitle.GetStringId(), gGameCommandErrorText, gCommonFormatArgs);
         }
 
         money32 price = (((RideTrackCosts[ride->type].track_price * TrackPricing[TRACK_ELEM_MAZE]) >> 16));

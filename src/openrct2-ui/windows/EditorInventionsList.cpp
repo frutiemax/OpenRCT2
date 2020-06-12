@@ -26,8 +26,9 @@
 
 #pragma region Widgets
 
-constexpr int32_t WW = 600;
-constexpr int32_t WH = 400;
+static constexpr const int32_t WW = 600;
+static constexpr const int32_t WH = 400;
+static constexpr const rct_string_id WINDOW_TITLE = STR_INVENTION_LIST;
 
 // clang-format off
 enum {
@@ -45,9 +46,7 @@ enum {
 };
 
 static rct_widget window_editor_inventions_list_widgets[] = {
-    { WWT_FRAME,            0,  0,      599,    0,      399,    STR_NONE,               STR_NONE                },
-    { WWT_CAPTION,          0,  1,      598,    1,      14,     STR_INVENTION_LIST,     STR_WINDOW_TITLE_TIP    },
-    { WWT_CLOSEBOX,         0,  587,    597,    2,      13,     STR_CLOSE_X,            STR_CLOSE_WINDOW_TIP    },
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,      599,    43,     399,    STR_NONE,               STR_NONE                },
     { WWT_TAB,              1,  3,      33,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,   STR_NONE          },
     { WWT_SCROLL,           1,  4,      371,    56,     216,    SCROLL_VERTICAL,        STR_NONE                },
@@ -311,7 +310,7 @@ rct_window* window_editor_inventions_list_open()
     window_init_scroll_widgets(w);
     w->selected_tab = 0;
     w->research_item = nullptr;
-    _editorInventionsListDraggedItem.rawValue = RESEARCH_ITEM_NULL;
+    _editorInventionsListDraggedItem.SetNull();
 
     w->min_width = WW;
     w->min_height = WH;
@@ -396,7 +395,7 @@ static void window_editor_inventions_list_update(rct_window* w)
     if (window_find_by_class(WC_EDITOR_INVENTION_LIST_DRAG) != nullptr)
         return;
 
-    _editorInventionsListDraggedItem.rawValue = RESEARCH_ITEM_NULL;
+    _editorInventionsListDraggedItem.SetNull();
     w->Invalidate();
 }
 
@@ -409,11 +408,11 @@ static void window_editor_inventions_list_scrollgetheight(rct_window* w, int32_t
     *height = 0;
     if (scrollIndex == 0)
     {
-        *height += (int32_t)gResearchItemsInvented.size() * SCROLLABLE_ROW_HEIGHT;
+        *height += static_cast<int32_t>(gResearchItemsInvented.size()) * SCROLLABLE_ROW_HEIGHT;
     }
     else
     {
-        *height += (int32_t)gResearchItemsUninvented.size() * SCROLLABLE_ROW_HEIGHT;
+        *height += static_cast<int32_t>(gResearchItemsUninvented.size()) * SCROLLABLE_ROW_HEIGHT;
     }
 }
 
@@ -691,12 +690,13 @@ static void window_editor_inventions_list_scrollpaint(rct_window* w, rct_drawpix
         rct_string_id itemNameId = researchItem.GetName();
 
         if (researchItem.type == RESEARCH_ENTRY_TYPE_RIDE
-            && !RideGroupManager::RideTypeIsIndependent(researchItem.baseRideType))
+            && !RideTypeDescriptors[researchItem.baseRideType].HasFlag(RIDE_TYPE_FLAG_LIST_VEHICLES_SEPARATELY))
         {
             const auto rideEntry = get_ride_entry(researchItem.entryIndex);
             const rct_string_id rideGroupName = get_ride_naming(researchItem.baseRideType, rideEntry).name;
             format_string(
-                groupNamePtr, std::size(groupNameBuffer), STR_INVENTIONS_LIST_RIDE_AND_VEHICLE_NAME, (void*)&rideGroupName);
+                groupNamePtr, std::size(groupNameBuffer), STR_INVENTIONS_LIST_RIDE_AND_VEHICLE_NAME,
+                static_cast<const void*>(&rideGroupName));
             format_string(vehicleNamePtr, std::size(vehicleNameBuffer), itemNameId, nullptr);
         }
         else
@@ -707,13 +707,13 @@ static void window_editor_inventions_list_scrollpaint(rct_window* w, rct_drawpix
 
         // Draw group name
         gfx_clip_string(groupNameBuffer, columnSplitOffset);
-        gfx_draw_string(dpi, groupNameBuffer, colour, 1, itemY);
+        gfx_draw_string(dpi, groupNameBuffer, colour, { 1, itemY });
 
         // Draw vehicle name
         if (vehicleNamePtr)
         {
             gfx_clip_string(vehicleNameBuffer, columnSplitOffset - 11);
-            gfx_draw_string(dpi, vehicleNameBuffer, colour, columnSplitOffset + 1, itemY);
+            gfx_draw_string(dpi, vehicleNameBuffer, colour, { columnSplitOffset + 1, itemY });
         }
     }
 }
@@ -735,7 +735,8 @@ static void window_editor_inventions_list_drag_open(ResearchItem* researchItem)
     rct_string_id stringId = researchItem->GetName();
 
     ptr = buffer;
-    if (researchItem->type == RESEARCH_ENTRY_TYPE_RIDE && !RideGroupManager::RideTypeIsIndependent(researchItem->baseRideType))
+    if (researchItem->type == RESEARCH_ENTRY_TYPE_RIDE
+        && !RideTypeDescriptors[researchItem->baseRideType].HasFlag(RIDE_TYPE_FLAG_LIST_VEHICLES_SEPARATELY))
     {
         const auto rideEntry = get_ride_entry(researchItem->entryIndex);
         const rct_string_id rideGroupName = get_ride_naming(researchItem->baseRideType, rideEntry).name;
@@ -806,7 +807,7 @@ static void window_editor_inventions_list_drag_moved(rct_window* w, const Screen
     }
 
     window_close(w);
-    _editorInventionsListDraggedItem.rawValue = RESEARCH_ITEM_NULL;
+    _editorInventionsListDraggedItem.SetNull();
     window_invalidate_by_class(WC_EDITOR_INVENTION_LIST);
 }
 
@@ -829,19 +830,21 @@ static rct_string_id window_editor_inventions_list_prepare_name(const ResearchIt
 {
     rct_string_id drawString;
     rct_string_id stringId = researchItem->GetName();
+    auto ft = Formatter::Common();
 
-    if (researchItem->type == RESEARCH_ENTRY_TYPE_RIDE && !RideGroupManager::RideTypeIsIndependent(researchItem->baseRideType))
+    if (researchItem->type == RESEARCH_ENTRY_TYPE_RIDE
+        && !RideTypeDescriptors[researchItem->baseRideType].HasFlag(RIDE_TYPE_FLAG_LIST_VEHICLES_SEPARATELY))
     {
         drawString = withGap ? STR_INVENTIONS_LIST_RIDE_AND_VEHICLE_NAME_DRAG : STR_WINDOW_COLOUR_2_STRINGID_STRINGID;
         rct_string_id rideGroupName = get_ride_naming(researchItem->baseRideType, get_ride_entry(researchItem->entryIndex))
                                           .name;
-        set_format_arg(0, rct_string_id, rideGroupName);
-        set_format_arg(2, rct_string_id, stringId);
+        ft.Add<rct_string_id>(rideGroupName);
+        ft.Add<rct_string_id>(stringId);
     }
     else
     {
         drawString = STR_WINDOW_COLOUR_2_STRINGID;
-        set_format_arg(0, rct_string_id, stringId);
+        ft.Add<rct_string_id>(stringId);
     }
 
     return drawString;

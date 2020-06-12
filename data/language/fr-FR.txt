@@ -1576,7 +1576,7 @@ STR_2215    :{STRINGID}{NEWLINE}({STRINGID})
 STR_2216    :{WINDOW_COLOUR_2}{COMMA16}°C
 STR_2217    :{WINDOW_COLOUR_2}{COMMA16}°F
 STR_2218    :{RED}{STRINGID} sur {STRINGID} n'est pas encore revenu à {STRINGID}!{NEWLINE}Vérifiez s'il est coincé ou au point mort
-STR_2219    :{RED}{COMMA16} personnes sont mortes dans un accident sur {STRINGID}
+STR_2219    :{RED}{COMMA16} personnes sont décédées dans un accident sur {STRINGID}
 STR_2220    :{WINDOW_COLOUR_2}Evaluation du parc : {BLACK}{COMMA16}
 STR_2221    :{SMALLFONT}{BLACK}Evaluation du parc : {COMMA16}
 STR_2222    :{SMALLFONT}{BLACK}{STRINGID}
@@ -1945,8 +1945,8 @@ STR_2728    :{UINT16}h {UINT16}m
 STR_2729    :{UINT16}h {UINT16}m
 STR_2730    :{UINT16}h {UINT16}m
 STR_2731    :{UINT16}h {UINT16}m
-STR_2732    :{COMMA16}ft
-STR_2733    :{COMMA16}m
+STR_2732    :{COMMA32}ft
+STR_2733    :{COMMA32}m
 STR_2734    :{COMMA16}mph
 STR_2735    :{COMMA16}km/h
 STR_2736    :{MONTH}, année {COMMA16}
@@ -1982,7 +1982,7 @@ STR_2778    :»{MOVE_X}{SMALLFONT}{STRING}
 # End of new strings
 STR_2779    :Vue #{COMMA16}
 STR_2780    :Vue supplémentaire
-STR_2781    :{STRINGID}:{MOVE_X}{255}{STRINGID}
+STR_2781    :{STRINGID}:
 STR_2782    :SHIFT + 
 STR_2783    :CTRL + 
 STR_2784    :Modifier raccourci clavier
@@ -2428,8 +2428,8 @@ STR_3329    :Entrée du parc pas encore construite
 STR_3330    :Le parc doit posséder du terrain
 STR_3331    :Allée depuis l'entrée du parc jusqu'au bord de la carte incomplète ou trop complexe. Une allée doit être simple avec aussi peu d'intersections et de virages que possible
 STR_3332    :L'entrée du parc est dans le mauvais sens ou ne possède pas d'allée conduisant au bord de la carte
-STR_3333    :Exporter objets plug-ins avec parties sauvegardées
-STR_3334    :{SMALLFONT}{BLACK}Choisir si vous souhaitez sauvegarder d'autres données requises pour objets plug-in (données supplémentaires non fournies avec ce produit) dans des fichiers de sauvegarde ou de scénario, afin qu'une personne ne disposant pas des données additionnelles puisse les charger
+STR_3333    :Exporter objets personnalisés avec parties sauvegardées
+STR_3334    :{SMALLFONT}{BLACK}Choisir si vous souhaitez sauvegarder d'autres données requises pour objets personnalisés (données supplémentaires non fournies avec ce produit) dans des fichiers de sauvegarde ou de scénario, afin qu'une personne ne disposant pas des données additionnelles puisse les charger
 STR_3335    :Concepteur de montagnes russes - Choisir type d'attraction et de véhicule
 STR_3336    :Gestionnaire de voies - Choisir type d'attraction
 STR_3338    :{BLACK}Conception personnalisée
@@ -2530,19 +2530,6 @@ STR_5160    :{POP16}{MONTH} {PUSH16}{PUSH16}{STRINGID}, année {POP16}{COMMA16}
 STR_5161    :Format de date :
 STR_5162    :Jour/Mois/Année
 STR_5163    :Mois/Jour/Année
-STR_5164    :Nom de la chaîne Twitch
-STR_5165    :Nommer les visiteurs d'après les abonnés
-STR_5166    :{SMALLFONT}{BLACK}Renomme les visiteurs d'après les abonnés à la chaîne Twitch
-STR_5167    :Suivre les visiteurs abonnés
-STR_5168    :{SMALLFONT}{BLACK}Active les informations de suivi pour les visiteurs nommés d'après les abonnés à la chaîne Twitch
-STR_5169    :Nommer les visiteurs d'après les participants du chat
-STR_5170    :{SMALLFONT}{BLACK}Renomme les visiteurs d'après les participants du chat Twitch
-STR_5171    :Suivre les visiteurs du chat
-STR_5172    :{SMALLFONT}{BLACK}Active les informations de suivi pour les visiteurs nommés d'après les participants du chat Twitch
-STR_5173    :Passer les messages Twitch dans les notifications
-STR_5174    :{SMALLFONT}{BLACK}Utilise les messages de chat Twitch précédés de !news pour les notifications durant le jeu
-STR_5175    :Saisir le nom de votre chaîne Twitch
-STR_5176    :Activer l'intégration Twitch
 STR_5177    :Mode plein écran :
 STR_5178    :{SMALLFONT}{BLACK}Afficher les options de triche financière
 STR_5179    :{SMALLFONT}{BLACK}Afficher les options de triche des visiteurs
@@ -2637,7 +2624,6 @@ STR_5267    :{SMALLFONT}{BLACK}Langue et unités
 STR_5268    :{SMALLFONT}{BLACK}Audio
 STR_5269    :{SMALLFONT}{BLACK}Contrôles et interface
 STR_5270    :{SMALLFONT}{BLACK}Divers
-STR_5271    :{SMALLFONT}{BLACK}Twitch
 STR_5272    :{SMALLFONT}{BLACK}Petits décors
 STR_5273    :{SMALLFONT}{BLACK}Grands décors
 STR_5274    :{SMALLFONT}{BLACK}Allées
@@ -3178,7 +3164,6 @@ STR_5848    :{SMALLFONT}{BLACK}Créer et gérer des séquences titre personnalis
 STR_5849    :{SMALLFONT}{BLACK}Placer automatiquement les nouveaux employés
 STR_5850    :<removed string - do not use>
 STR_5851    :{SMALLFONT}{BLACK}Définit le délai d'inspection par défaut sur les nouvelles attractions
-STR_5852    :{SMALLFONT}{BLACK}Définit le nom de la chaîne TwitchTV utilisée pour l'intégration à Twitch
 STR_5853    :{SMALLFONT}{BLACK}Active/désactive les effets sonores
 STR_5854    :{SMALLFONT}{BLACK}Active/désactive les musiques des attractions
 STR_5855    :{SMALLFONT}{BLACK}Définit le mode fenêtré, plein écran, ou plein écran dans un nouveau bureau
@@ -3362,7 +3347,7 @@ STR_6033    :Chemin vers l'installation de RCT1:
 STR_6034    :{SMALLFONT}{BLACK}{STRING}
 STR_6035    :Veuillez choisir votre installation de RCT1
 STR_6036    :{SMALLFONT}{BLACK}Vider
-STR_6037    :Veuillez choisir une installation valide de RCT1
+STR_6037    :Le dossier sélectionné ne contient pas une installation valide de RollerCoaster Tycoon 1.
 STR_6038    :{SMALLFONT}{BLACK}Si vous avez une installation de RCT1, définissez cette option pour pouvoir charger les scénarios, musiques...
 STR_6039    :{SMALLFONT}{BLACK}Démolir le manège rapidement.
 STR_6040    :Modifier les options de scénario. 
@@ -3580,9 +3565,6 @@ STR_6248    :{WINDOW_COLOUR_1}Voulez-vous renouveller {STRINGID} pour {CURRENCY}
 STR_6249    :{WINDOW_COLOUR_1}Voulez-vous renouveller {STRINGID} ?
 STR_6250    :{WINDOW_COLOUR_1}Etes-vous sûr(e) de vouloir détruire complétement {STRINGID} et gagner {CURRENCY} ?
 STR_6251    :L'attraction n'est pas encore vide
-STR_6252    :Adresse vers l'intégration API Twitch
-STR_6253    :{SMALLFONT}{BLACK}Fournit l'adresse vers l'intégration API de Twitch. Requis pour activer les interactions Twitch.
-STR_6254    :Adresse URL de l'intégration API Twitch :
 STR_6255    :L'adresse est invalide
 STR_6256    :Effets de rendu
 STR_6257    :Verre (transparent)
@@ -3692,6 +3674,15 @@ STR_6360    :{SMALLFONT}{BLACK}{COMMA32}
 STR_6361    :Activer les effets de lumières sur les attractions (expérimental)
 STR_6362    :{SMALLFONT}{BLACK}Si activé, les véhicules sur les attractions sur rails seront éclairées la nuit.
 STR_6363    :Texte copié au presse-papier
+STR_6364    :{RED}{COMMA16} personne est décédée dans un accident sur {STRINGID}
+STR_6365    :Victimes de l'attraction
+STR_6366    :Véhicules coincés ou au point mort
+STR_6367    :{WINDOW_COLOUR_2}Image de l'animation :
+STR_6368    :Pour des raisons de compatibilité, il n'est pas recommandé d'exécuter OpenRCT2 avec Wine. OpenRCT2 supporte nativement macOS, Linux, FreeBSD et OpenBSD.
+STR_6369    :Autoriser la construction de tracés aux hauteurs invalides
+STR_6370    :{SMALLFONT}{BLACK}Autorise le placement de picèces de tracés à n'importe quelle hauteur
+STR_6371    :Le chemin spécifié contient une installation de RollerCoaster Tycoon 1, mais le fichier "csg1i.dat" est manquant. Ce fichier doit être copié depuis le CD de RollerCoaster Tycoon 1 dans le dossier "Data" vers l'installation de RollerCoaster Tycoon 1 sur votre disque dur.
+STR_6372    :Le chemin spécifié contient une installation de RollerCoaster Tycoon 1, mais cette version n'est pas compatible. OpenRCT2 a besoin d'une installation Looping En Folie ou RCT Deluxe pour pouvoir utiliser les données de RollerCoaster Tycoon 1.
 
 #############
 # Scenarios #

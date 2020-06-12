@@ -23,7 +23,7 @@
 #    define PLATFORM_MODIFIER CTRL
 #endif
 
-enum
+enum KeyboardShortcut
 {
     SHORTCUT_CLOSE_TOP_MOST_WINDOW,
     SHORTCUT_CLOSE_ALL_FLOATING_WINDOWS,
@@ -111,6 +111,7 @@ enum
     SHORTCUT_DECREASE_Y_COORD,
     SHORTCUT_INCREASE_ELEM_HEIGHT,
     SHORTCUT_DECREASE_ELEM_HEIGHT,
+    SHORTCUT_TOGGLE_CLEARANCE_CHECKS,
 
     SHORTCUT_COUNT,
 
@@ -151,9 +152,8 @@ namespace OpenRCT2
     } // namespace Input
 } // namespace OpenRCT2
 
-/** The current shortcut being changed. */
+// The current shortcut being changed.
 extern uint8_t gKeyboardShortcutChangeId;
-extern const rct_string_id ShortcutStringIds[SHORTCUT_COUNT];
 
 void keyboard_shortcuts_reset();
 bool keyboard_shortcuts_load();

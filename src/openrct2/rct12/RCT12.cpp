@@ -335,7 +335,7 @@ colour_t RCT12SmallSceneryElement::GetSecondaryColour() const
 
 bool RCT12SmallSceneryElement::NeedsSupports() const
 {
-    return (bool)(colour_1 & MAP_ELEM_SMALL_SCENERY_COLOUR_FLAG_NEEDS_SUPPORTS);
+    return colour_1 & MAP_ELEM_SMALL_SCENERY_COLOUR_FLAG_NEEDS_SUPPORTS;
 }
 
 uint32_t RCT12LargeSceneryElement::GetEntryIndex() const
@@ -1009,4 +1009,20 @@ bool RCT12ResearchItem::IsUninventedEndMarker() const
 bool RCT12ResearchItem::IsRandomEndMarker() const
 {
     return rawValue == RCT12_RESEARCHED_ITEMS_END_2;
+}
+
+ObjectEntryIndex RCTEntryIndexToOpenRCT2EntryIndex(RCT12ObjectEntryIndex index)
+{
+    if (index == RCT12_OBJECT_ENTRY_INDEX_NULL)
+        return OBJECT_ENTRY_INDEX_NULL;
+
+    return index;
+}
+
+RCT12ObjectEntryIndex OpenRCT2EntryIndexToRCTEntryIndex(ObjectEntryIndex index)
+{
+    if (index == OBJECT_ENTRY_INDEX_NULL)
+        return RCT12_OBJECT_ENTRY_INDEX_NULL;
+
+    return index;
 }

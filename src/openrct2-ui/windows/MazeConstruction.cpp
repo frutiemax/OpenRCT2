@@ -17,11 +17,16 @@
 #include <openrct2/audio/audio.h>
 #include <openrct2/drawing/Drawing.h>
 #include <openrct2/localisation/Localisation.h>
+#include <openrct2/ride/RideData.h>
 #include <openrct2/ride/Track.h>
 #include <openrct2/sprites.h>
 #include <openrct2/windows/Intent.h>
 
 #pragma region Widgets
+
+static constexpr const rct_string_id WINDOW_TITLE = STR_RIDE_CONSTRUCTION_WINDOW_TITLE;
+static constexpr const int32_t WH = 200;
+static constexpr const int32_t WW = 166;
 
 // clang-format off
 enum {
@@ -42,9 +47,7 @@ enum {
 };
 
 static rct_widget window_maze_construction_widgets[] = {
-    { WWT_FRAME,            0,  0,      165,    0,      199,    0xFFFFFFFF,                         STR_NONE                                                },
-    { WWT_CAPTION,          0,  1,      164,    1,      14,     STR_RIDE_CONSTRUCTION_WINDOW_TITLE, STR_WINDOW_TITLE_TIP                                    },
-    { WWT_CLOSEBOX,         0,  153,    163,    2,      13,     STR_CLOSE_X,                        STR_CLOSE_WINDOW_TIP                                    },
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_GROUPBOX,         0,  3,      162,    17,     71,     STR_RIDE_CONSTRUCTION_MODE,         STR_NONE                                                },
     { WWT_EMPTY,            0,  0,      0,      0,      0,      0xFFFFFFFF,                         STR_NONE                                                },
     { WWT_EMPTY,            0,  0,      0,      0,      0,      0xFFFFFFFF,                         STR_NONE                                                },
@@ -195,7 +198,7 @@ static void window_maze_construction_entrance_mouseup(rct_window* w, rct_widgeti
         return;
 
     gRideEntranceExitPlaceType = widgetIndex == WIDX_MAZE_ENTRANCE ? ENTRANCE_TYPE_RIDE_ENTRANCE : ENTRANCE_TYPE_RIDE_EXIT;
-    gRideEntranceExitPlaceRideIndex = (uint8_t)w->number;
+    gRideEntranceExitPlaceRideIndex = static_cast<uint8_t>(w->number);
     gRideEntranceExitPlaceStationIndex = 0;
     input_set_flag(INPUT_FLAG_6, true);
 

@@ -10,7 +10,7 @@ An open-source re-implementation of RollerCoaster Tycoon 2. A construction and m
 ### Download
 | Latest release | Latest development build |
 |----------------|--------------------------|
-| [![OpenRCT2.org](https://img.shields.io/badge/master-v0.2.5-green.svg)](https://openrct2.org/downloads/master/latest) | [![OpenRCT2.org](https://img.shields.io/badge/develop-v0.2.5+-blue.svg)](https://openrct2.org/downloads/develop/latest) |
+| [![OpenRCT2.org](https://img.shields.io/badge/master-v0.2.6-green.svg)](https://openrct2.org/downloads/master/latest) | [![OpenRCT2.org](https://img.shields.io/badge/develop-v0.2.6+-blue.svg)](https://openrct2.org/downloads/develop/latest) |
 
 ---
 
@@ -110,6 +110,7 @@ The program can also be built as a command line program using CMake. This type o
 - icu (>= 59.0)
 - zlib
 - gl (commonly provided by Mesa or GPU vendors; only for UI client, can be disabled)
+- duktape (unless scripting is disabled)
 - cmake
 
 ---
@@ -141,7 +142,7 @@ The recommended way of building OpenRCT2 for macOS is with Xcode. The Xcode buil
 #### CMake:
 A command line version of OpenRCT2 can be built using CMake. This type of build requires you to provide the dependencies yourself. The supported method of doing this is with [Homebrew](http://brew.sh). Once you have Homebrew installed, you can download all the required libraries with this command:
 ```
-brew install cmake openssl jansson libpng sdl2 speexdsp libzip freetype pkg-config
+brew install cmake duktape freetype icu4c jansson libpng libzip openssl pkg-config sdl2 speexdsp
 ```
 
 Once you have the dependencies installed, you can build the project using CMake using the following commands:

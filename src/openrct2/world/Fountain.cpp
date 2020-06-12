@@ -142,7 +142,7 @@ void JumpingFountain::Create(
         jumpingFountain->sprite_height_negative = 36;
         jumpingFountain->sprite_height_positive = 12;
         jumpingFountain->sprite_identifier = SPRITE_IDENTIFIER_MISC;
-        sprite_move(newLoc.x, newLoc.y, newLoc.z, jumpingFountain);
+        jumpingFountain->MoveTo(newLoc);
         jumpingFountain->type = newType == JUMPING_FOUNTAIN_TYPE_SNOW ? SPRITE_MISC_JUMPING_FOUNTAIN_SNOW
                                                                       : SPRITE_MISC_JUMPING_FOUNTAIN_WATER;
         jumpingFountain->NumTicksAlive = 0;
@@ -263,7 +263,7 @@ bool JumpingFountain::IsJumpingFountain(const int32_t newType, const CoordsXYZ& 
         if (!tileElement->AsPath()->HasAddition())
             continue;
 
-        const uint8_t additionIndex = tileElement->AsPath()->GetAdditionEntryIndex();
+        const auto additionIndex = tileElement->AsPath()->GetAdditionEntryIndex();
         rct_scenery_entry* sceneryEntry = get_footpath_item_entry(additionIndex);
         if (sceneryEntry != nullptr && sceneryEntry->path_bit.flags & pathBitFlagMask)
         {

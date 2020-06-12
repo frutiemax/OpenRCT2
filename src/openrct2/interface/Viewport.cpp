@@ -903,11 +903,11 @@ void viewport_paint(
     right = left + width;
     bottom = top + height;
 
-    int16_t x = (int16_t)(left - (int16_t)(viewport->viewPos.x & bitmask));
+    int16_t x = static_cast<int16_t>(left - static_cast<int16_t>(viewport->viewPos.x & bitmask));
     x = x / viewport->zoom;
     x += viewport->pos.x;
 
-    int16_t y = (int16_t)(top - (int16_t)(viewport->viewPos.y & bitmask));
+    int16_t y = static_cast<int16_t>(top - static_cast<int16_t>(viewport->viewPos.y & bitmask));
     y = y / viewport->zoom;
     y += viewport->pos.y;
 
@@ -1252,7 +1252,7 @@ void viewport_set_visibility(uint8_t mode)
             case 5: // 6CB7D8
                 // Set underground off, invalidate if it was on
                 invalidate += vp->flags & VIEWPORT_FLAG_UNDERGROUND_INSIDE;
-                vp->flags &= ~((uint16_t)VIEWPORT_FLAG_UNDERGROUND_INSIDE);
+                vp->flags &= ~(static_cast<uint16_t>(VIEWPORT_FLAG_UNDERGROUND_INSIDE));
                 break;
         }
         if (invalidate != 0)
@@ -1288,7 +1288,8 @@ static bool PSSpriteTypeIsInFilter(paint_struct* ps, uint16_t filter)
 /**
  * rct2: 0x00679236, 0x00679662, 0x00679B0D, 0x00679FF1
  */
-static bool is_pixel_present_bmp(uint32_t imageType, const rct_g1_element* g1, const uint8_t* index, const uint8_t* palette)
+static bool is_pixel_present_bmp(
+    uint32_t imageType, const rct_g1_element* g1, const uint8_t* index, const PaletteMap& paletteMap)
 {
     // Probably used to check for corruption
     if (!(g1->flags & G1_FLAG_BMP))
@@ -1298,7 +1299,7 @@ static bool is_pixel_present_bmp(uint32_t imageType, const rct_g1_element* g1, c
 
     if (imageType & IMAGE_TYPE_REMAP)
     {
-        return palette[*index] != 0;
+        return paletteMap[*index] != 0;
     }
 
     if (imageType & IMAGE_TYPE_TRANSPARENT)
@@ -1405,7 +1406,7 @@ static bool is_pixel_present_rle(const uint8_t* esi, int16_t x_start_point, int1
  * @return value originally stored in 0x00141F569
  */
 static bool is_sprite_interacted_with_palette_set(
-    rct_drawpixelinfo* dpi, int32_t imageId, int16_t x, int16_t y, const uint8_t* palette)
+    rct_drawpixelinfo* dpi, int32_t imageId, int16_t x, int16_t y, const PaletteMap& paletteMap)
 {
     const rct_g1_element* g1 = gfx_get_g1_element(imageId & 0x7FFFF);
     if (g1 == nullptr)
@@ -1425,15 +1426,15 @@ static bool is_sprite_interacted_with_palette_set(
             // TODO: SAR in dpi done with `>> 1`, in coordinates with `/ 2`
             rct_drawpixelinfo zoomed_dpi = {
                 /* .bits = */ dpi->bits,
-                /* .x = */ (int16_t)(dpi->x >> 1),
-                /* .y = */ (int16_t)(dpi->y >> 1),
+                /* .x = */ static_cast<int16_t>(dpi->x >> 1),
+                /* .y = */ static_cast<int16_t>(dpi->y >> 1),
                 /* .height = */ dpi->height,
                 /* .width = */ dpi->width,
                 /* .pitch = */ dpi->pitch,
                 /* .zoom_level = */ dpi->zoom_level - 1,
             };
 
-            return is_sprite_interacted_with_palette_set(&zoomed_dpi, imageId - g1->zoomed_offset, x / 2, y / 2, palette);
+            return is_sprite_interacted_with_palette_set(&zoomed_dpi, imageId - g1->zoomed_offset, x / 2, y / 2, paletteMap);
         }
     }
 
@@ -1535,7 +1536,7 @@ static bool is_sprite_interacted_with_palette_set(
 
     if (!(g1->flags & G1_FLAG_1))
     {
-        return is_pixel_present_bmp(imageType, g1, offset, palette);
+        return is_pixel_present_bmp(imageType, g1, offset, paletteMap);
     }
 
     Guard::Assert(false, "Invalid image type encountered.");
@@ -1548,7 +1549,7 @@ static bool is_sprite_interacted_with_palette_set(
  */
 static bool is_sprite_interacted_with(rct_drawpixelinfo* dpi, int32_t imageId, int32_t x, int32_t y)
 {
-    const uint8_t* palette = nullptr;
+    auto paletteMap = PaletteMap::GetDefault();
     imageId &= ~IMAGE_TYPE_TRANSPARENT;
     if (imageId & IMAGE_TYPE_REMAP)
     {
@@ -1558,18 +1559,16 @@ static bool is_sprite_interacted_with(rct_drawpixelinfo* dpi, int32_t imageId, i
         {
             index &= 0x1F;
         }
-        int32_t g1Index = palette_to_g1_offset[index];
-        const rct_g1_element* g1 = gfx_get_g1_element(g1Index);
-        if (g1 != nullptr)
+        if (auto pm = GetPaletteMapForColour(index))
         {
-            palette = g1->offset;
+            paletteMap = *pm;
         }
     }
     else
     {
         _currentImageType = 0;
     }
-    return is_sprite_interacted_with_palette_set(dpi, imageId, x, y, palette);
+    return is_sprite_interacted_with_palette_set(dpi, imageId, x, y, paletteMap);
 }
 
 /**
@@ -1645,8 +1644,8 @@ void get_map_coordinates_from_pos_window(
     {
         rct_viewport* myviewport = window->viewport;
         screenCoords -= myviewport->pos;
-        if (screenCoords.x >= 0 && screenCoords.x < (int32_t)myviewport->width && screenCoords.y >= 0
-            && screenCoords.y < (int32_t)myviewport->height)
+        if (screenCoords.x >= 0 && screenCoords.x < static_cast<int32_t>(myviewport->width) && screenCoords.y >= 0
+            && screenCoords.y < static_cast<int32_t>(myviewport->height))
         {
             screenCoords.x = screenCoords.x * myviewport->zoom;
             screenCoords.y = screenCoords.y * myviewport->zoom;
@@ -1885,7 +1884,9 @@ uint8_t get_current_rotation()
 #if defined(DEBUG_LEVEL_1) && DEBUG_LEVEL_1
     if (rotation != rotation_masked)
     {
-        log_error("Found wrong rotation %d! Will return %d instead.", (uint32_t)rotation, (uint32_t)rotation_masked);
+        log_error(
+            "Found wrong rotation %d! Will return %d instead.", static_cast<uint32_t>(rotation),
+            static_cast<uint32_t>(rotation_masked));
     }
 #endif // DEBUG_LEVEL_1
     return rotation_masked;

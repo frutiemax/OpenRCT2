@@ -94,7 +94,7 @@ void window_map_tooltip_update_visibility()
 
     if (_cursorHoldDuration < 25 || stringId == STR_NONE
         || input_test_place_object_modifier(
-            (PLACE_OBJECT_MODIFIER)(PLACE_OBJECT_MODIFIER_COPY_Z | PLACE_OBJECT_MODIFIER_SHIFT_Z))
+            static_cast<PLACE_OBJECT_MODIFIER>(PLACE_OBJECT_MODIFIER_COPY_Z | PLACE_OBJECT_MODIFIER_SHIFT_Z))
         || window_find_by_class(WC_ERROR) != nullptr)
     {
         window_close_by_class(WC_MAP_TOOLTIP);
@@ -157,7 +157,6 @@ static void window_map_tooltip_paint(rct_window* w, rct_drawpixelinfo* dpi)
         return;
     }
 
-    gfx_draw_string_centred_wrapped(
-        dpi, gMapTooltipFormatArgs, w->windowPos.x + (w->width / 2), w->windowPos.y + (w->height / 2), w->width,
-        STR_MAP_TOOLTIP_STRINGID, COLOUR_BLACK);
+    ScreenCoordsXY stringCoords(w->windowPos.x + (w->width / 2), w->windowPos.y + (w->height / 2));
+    gfx_draw_string_centred_wrapped(dpi, gMapTooltipFormatArgs, stringCoords, w->width, STR_MAP_TOOLTIP_STRINGID, COLOUR_BLACK);
 }

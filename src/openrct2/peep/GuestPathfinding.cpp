@@ -8,6 +8,7 @@
  *****************************************************************************/
 
 #include "../core/Guard.hpp"
+#include "../ride/RideData.h"
 #include "../ride/Station.h"
 #include "../ride/Track.h"
 #include "../scenario/Scenario.h"
@@ -454,7 +455,7 @@ static uint8_t peep_pathfind_get_max_number_junctions(Peep* peep)
         return 8;
     }
 
-    if (peep->item_standard_flags & PEEP_ITEM_MAP)
+    if (peep->ItemStandardFlags & PEEP_ITEM_MAP)
         return 7;
 
     if (peep->peep_flags & PEEP_FLAGS_LEAVING_PARK)
@@ -612,8 +613,8 @@ static void peep_pathfind_heuristic_search(
     /* If this is where the search started this is a search loop and the
      * current search path ends here.
      * Return without updating the parameters (best result so far). */
-    if ((_peepPathFindHistory[0].location.x == (uint8_t)loc.x) && (_peepPathFindHistory[0].location.y == (uint8_t)loc.y)
-        && (_peepPathFindHistory[0].location.z == loc.z))
+    if ((_peepPathFindHistory[0].location.x == static_cast<uint8_t>(loc.x))
+        && (_peepPathFindHistory[0].location.y == static_cast<uint8_t>(loc.y)) && (_peepPathFindHistory[0].location.z == loc.z))
     {
 #if defined(DEBUG_LEVEL_2) && DEBUG_LEVEL_2
         if (gPathFindDebug)
@@ -1010,8 +1011,8 @@ static void peep_pathfind_heuristic_search(
                     for (int32_t junctionNum = _peepPathFindNumJunctions + 1; junctionNum <= _peepPathFindMaxJunctions;
                          junctionNum++)
                     {
-                        if ((_peepPathFindHistory[junctionNum].location.x == (uint8_t)loc.x)
-                            && (_peepPathFindHistory[junctionNum].location.y == (uint8_t)loc.y)
+                        if ((_peepPathFindHistory[junctionNum].location.x == static_cast<uint8_t>(loc.x))
+                            && (_peepPathFindHistory[junctionNum].location.y == static_cast<uint8_t>(loc.y))
                             && (_peepPathFindHistory[junctionNum].location.z == loc.z))
                         {
                             pathLoop = true;
@@ -1070,8 +1071,8 @@ static void peep_pathfind_heuristic_search(
 
                 /* This junction was NOT previously visited in the current
                  * search path, so add the junction to the history. */
-                _peepPathFindHistory[_peepPathFindNumJunctions].location.x = (uint8_t)loc.x;
-                _peepPathFindHistory[_peepPathFindNumJunctions].location.y = (uint8_t)loc.y;
+                _peepPathFindHistory[_peepPathFindNumJunctions].location.x = static_cast<uint8_t>(loc.x);
+                _peepPathFindHistory[_peepPathFindNumJunctions].location.y = static_cast<uint8_t>(loc.y);
                 _peepPathFindHistory[_peepPathFindNumJunctions].location.z = loc.z;
                 // .direction take is added below.
 
@@ -1312,7 +1313,7 @@ Direction peep_pathfind_choose_direction(const TileCoordsXYZ& loc, Peep* peep)
         peep->pathfind_goal.direction = 0;
 
         // Clear pathfinding history
-        std::fill_n((uint8_t*)peep->pathfind_history, sizeof(peep->pathfind_history), 0xFF);
+        std::fill_n(reinterpret_cast<uint8_t*>(peep->pathfind_history), sizeof(peep->pathfind_history), 0xFF);
 #if defined(DEBUG_LEVEL_1) && DEBUG_LEVEL_1
         if (gPathFindDebug)
         {
@@ -1373,8 +1374,8 @@ Direction peep_pathfind_choose_direction(const TileCoordsXYZ& loc, Peep* peep)
             /* The pathfinding will only use elements
              * 1.._peepPathFindMaxJunctions, so the starting point
              * is placed in element 0 */
-            _peepPathFindHistory[0].location.x = (uint8_t)(loc.x);
-            _peepPathFindHistory[0].location.y = (uint8_t)(loc.y);
+            _peepPathFindHistory[0].location.x = static_cast<uint8_t>(loc.x);
+            _peepPathFindHistory[0].location.y = static_cast<uint8_t>(loc.y);
             _peepPathFindHistory[0].location.z = loc.z;
             _peepPathFindHistory[0].direction = 0xF;
 
@@ -1512,8 +1513,8 @@ Direction peep_pathfind_choose_direction(const TileCoordsXYZ& loc, Peep* peep)
          * and remember this junction. */
         int32_t i = peep->pathfind_goal.direction++;
         peep->pathfind_goal.direction &= 3;
-        peep->pathfind_history[i].x = (uint8_t)loc.x;
-        peep->pathfind_history[i].y = (uint8_t)loc.y;
+        peep->pathfind_history[i].x = static_cast<uint8_t>(loc.x);
+        peep->pathfind_history[i].y = static_cast<uint8_t>(loc.y);
         peep->pathfind_history[i].z = loc.z;
         peep->pathfind_history[i].direction = permitted_edges;
         /* Remove the chosen_edge from those left to try. */
@@ -1883,8 +1884,6 @@ static StationIndex guest_pathfinding_select_random_station(
  */
 int32_t guest_path_finding(Guest* peep)
 {
-    // int16_t x, y, z;
-
 #if defined(DEBUG_LEVEL_1) && DEBUG_LEVEL_1
     pathfind_logging_enable(peep);
     if (gPathFindDebug)
@@ -2025,7 +2024,7 @@ int32_t guest_path_finding(Guest* peep)
     /* If there are still multiple directions to choose from,
      * peeps with maps will randomly read the map: probability of doing so
      * is much higher when heading for a ride or the park exit. */
-    if (peep->item_standard_flags & PEEP_ITEM_MAP)
+    if (peep->ItemStandardFlags & PEEP_ITEM_MAP)
     {
         // If at least 2 directions consult map
         if (bitcount(edges) >= 2)

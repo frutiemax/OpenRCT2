@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -71,7 +71,6 @@ uint8_t gPeepWarningThrottle[16];
 TileCoordsXYZ gPeepPathFindGoalPosition;
 bool gPeepPathFindIgnoreForeignQueues;
 ride_id_t gPeepPathFindQueueRideIndex;
-// uint32_t gPeepPathFindAltStationNum;
 
 static uint8_t _unk_F1AEF0;
 static TileElement* _peepRideEntranceExitElement;
@@ -82,186 +81,195 @@ static void peep_128_tick_update(Peep* peep, int32_t index);
 static void peep_release_balloon(Guest* peep, int16_t spawn_height);
 // clang-format off
 
+// Flags used by PeepThoughtToActionMap
+enum PeepThoughtToActionFlag : uint8_t
+{
+    PEEP_THOUGHT_ACTION_NO_FLAGS = 0,
+    PEEP_THOUGHT_ACTION_FLAG_RIDE = (1 << 0),
+    PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_SINGULAR = (1 << 1),
+    PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_INDEFINITE = (1 << 2),
+};
+
 /** rct2: 0x00981DB0 */
 static struct
 {
     PeepActionType action;
-    uint8_t flags;
+    PeepThoughtToActionFlag flags;
 } PeepThoughtToActionMap[] = {
-    { PEEP_ACTION_SHAKE_HEAD, 1 },
-    { PEEP_ACTION_EMPTY_POCKETS, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_WOW, 1 },
-    { PEEP_ACTION_NONE_2, 2 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 4 },
-    { PEEP_ACTION_SHAKE_HEAD, 4 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_WAVE, 0 },
-    { PEEP_ACTION_JOY, 1 },
-    { PEEP_ACTION_CHECK_TIME, 1 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_WAVE, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_WAVE, 0 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_DISGUST, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_BEING_WATCHED, 0 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 1 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_SHAKE_HEAD, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_NONE_2, 0 },
-    { PEEP_ACTION_JOY, 0 },
-    { PEEP_ACTION_NONE_2, 1 },
+    { PEEP_ACTION_SHAKE_HEAD, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_EMPTY_POCKETS, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_WOW, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_SINGULAR },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_INDEFINITE },
+    { PEEP_ACTION_SHAKE_HEAD, PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_INDEFINITE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_WAVE, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_JOY, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_CHECK_TIME, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_WAVE, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_WAVE, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_DISGUST, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_BEING_WATCHED, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_SHAKE_HEAD, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_JOY, PEEP_THOUGHT_ACTION_NO_FLAGS },
+    { PEEP_ACTION_NONE_2, PEEP_THOUGHT_ACTION_FLAG_RIDE },
 };
 
 static PeepActionSpriteType PeepSpecialSpriteToSpriteTypeMap[] = {
@@ -315,7 +323,7 @@ const bool gSpriteTypeToSlowWalkMap[] = {
 
 // clang-format on
 
-bool rct_sprite::IsPeep()
+bool rct_sprite::IsPeep() const
 {
     return peep.sprite_identifier == SPRITE_IDENTIFIER_PEEP;
 }
@@ -325,7 +333,7 @@ Peep* rct_sprite::AsPeep()
     Peep* result = nullptr;
     if (IsPeep())
     {
-        return (Peep*)this;
+        return reinterpret_cast<Peep*>(this);
     }
     return result;
 }
@@ -345,10 +353,10 @@ void Peep::Invalidate()
     invalidate_sprite_2(this);
 }
 
-void Peep::MoveTo(int16_t destX, int16_t destY, int16_t destZ)
+void Peep::MoveTo(const CoordsXYZ& newLocation)
 {
     Invalidate(); // Invalidate current position.
-    sprite_move(destX, destY, destZ, this);
+    SpriteBase::MoveTo(newLocation);
     Invalidate(); // Invalidate new position.
 }
 
@@ -379,7 +387,7 @@ Peep* try_get_guest(uint16_t spriteIndex)
     rct_sprite* sprite = try_get_sprite(spriteIndex);
     if (sprite == nullptr)
         return nullptr;
-    if (sprite->generic.sprite_identifier != SPRITE_IDENTIFIER_PEEP)
+    if (!sprite->IsPeep())
         return nullptr;
     if (sprite->peep.type != PEEP_TYPE_GUEST)
         return nullptr;
@@ -404,28 +412,28 @@ int32_t peep_get_staff_count()
  */
 void peep_update_all()
 {
-    int32_t i;
+    int32_t i = 0;
     uint16_t spriteIndex;
     Peep* peep;
 
     if (gScreenFlags & SCREEN_FLAGS_EDITOR)
         return;
 
-    spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP];
-    i = 0;
-    while (spriteIndex != SPRITE_INDEX_NULL)
+    // Do not use the FOR_ALL_PEEPS macro for this as next sprite index
+    // will be fetched on a delted peep if peep leaves the park.
+    for (spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP]; spriteIndex != SPRITE_INDEX_NULL;)
     {
-        peep = &(get_sprite(spriteIndex)->peep);
+        peep = GET_PEEP(spriteIndex);
         spriteIndex = peep->next;
 
-        if ((uint32_t)(i & 0x7F) != (gCurrentTicks & 0x7F))
+        if (static_cast<uint32_t>(i & 0x7F) != (gCurrentTicks & 0x7F))
         {
             peep->Update();
         }
         else
         {
             peep_128_tick_update(peep, i);
-            if (peep->linked_list_index == SPRITE_LIST_PEEP)
+            if (peep->sprite_identifier == SPRITE_IDENTIFIER_PEEP)
             {
                 peep->Update();
             }
@@ -601,7 +609,7 @@ std::optional<CoordsXY> Peep::UpdateAction(int16_t& xy_distance)
     {
         if (xy_distance <= destination_tolerance)
         {
-            return {};
+            return std::nullopt;
         }
         int32_t nextDirection = 0;
         if (x_delta < y_delta)
@@ -731,7 +739,7 @@ void Peep::Pickup()
     {
         guest->RemoveFromRide();
     }
-    MoveTo(LOCATION_NULL, y, z);
+    MoveTo({ LOCATION_NULL, y, z });
     SetState(PEEP_STATE_PICKED);
     sub_state = 0;
 }
@@ -741,9 +749,9 @@ void Peep::PickupAbort(int32_t old_x)
     if (state != PEEP_STATE_PICKED)
         return;
 
-    MoveTo(old_x, y, z + 8);
+    MoveTo({ old_x, y, z + 8 });
 
-    if (x != (int16_t)LOCATION_NULL)
+    if (x != LOCATION_NULL)
     {
         SetState(PEEP_STATE_FALLING);
         action = PEEP_ACTION_NONE_2;
@@ -793,7 +801,7 @@ bool Peep::Place(const TileCoordsXYZ& location, bool apply)
 
     if (apply)
     {
-        MoveTo(destination.x, destination.y, destination.z);
+        MoveTo(destination);
         SetState(PEEP_STATE_FALLING);
         action = PEEP_ACTION_NONE_2;
         special_sprite = 0;
@@ -887,7 +895,8 @@ void Peep::UpdateFalling()
 
         if (gConfigNotifications.guest_died)
         {
-            FormatNameTo(gCommonFormatArgs);
+            auto ft = Formatter::Common();
+            FormatNameTo(ft);
             news_item_add_to_queue(NEWS_ITEM_BLANK, STR_NEWS_ITEM_GUEST_DROWNED, x | (y << 16));
         }
 
@@ -929,7 +938,7 @@ void Peep::UpdateFalling()
                     if (height - 4 >= z && height < z + 20)
                     {
                         // Looks like we are drowning!
-                        MoveTo(x, y, height);
+                        MoveTo({ x, y, height });
 
                         auto guest = AsGuest();
                         if (guest != nullptr)
@@ -969,11 +978,11 @@ void Peep::UpdateFalling()
             Remove();
             return;
         }
-        MoveTo(x, y, z - 2);
+        MoveTo({ x, y, z - 2 });
         return;
     }
 
-    MoveTo(x, y, saved_height);
+    MoveTo({ x, y, saved_height });
 
     NextLoc = { CoordsXY{ x, y }.ToTileStart(), saved_map->GetBaseZ() };
 
@@ -1185,7 +1194,7 @@ void peep_problem_warnings_update()
     Ride* ride;
     uint16_t spriteIndex;
     uint32_t hunger_counter = 0, lost_counter = 0, noexit_counter = 0, thirst_counter = 0, litter_counter = 0,
-             disgust_counter = 0, bathroom_counter = 0, vandalism_counter = 0;
+             disgust_counter = 0, toilet_counter = 0, vandalism_counter = 0;
     uint8_t* warning_throttle = gPeepWarningThrottle;
 
     FOR_ALL_GUESTS (spriteIndex, peep)
@@ -1221,15 +1230,15 @@ void peep_problem_warnings_update()
                     thirst_counter++;
                 break;
 
-            case PEEP_THOUGHT_TYPE_BATHROOM:
+            case PEEP_THOUGHT_TYPE_TOILET:
                 if (peep->guest_heading_to_ride_id == 0xFF)
                 {
-                    bathroom_counter++;
+                    toilet_counter++;
                     break;
                 }
                 ride = get_ride(peep->guest_heading_to_ride_id);
-                if (ride != nullptr && !ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_BATHROOM))
-                    bathroom_counter++;
+                if (ride != nullptr && !ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IS_TOILET))
+                    toilet_counter++;
                 break;
 
             case PEEP_THOUGHT_TYPE_BAD_LITTER: // 0x1a
@@ -1273,12 +1282,12 @@ void peep_problem_warnings_update()
 
     if (warning_throttle[2])
         --warning_throttle[2];
-    else if (bathroom_counter >= PEEP_BATHROOM_WARNING_THRESHOLD && bathroom_counter >= gNumGuestsInPark / 16)
+    else if (toilet_counter >= PEEP_TOILET_WARNING_THRESHOLD && toilet_counter >= gNumGuestsInPark / 16)
     {
         warning_throttle[2] = 4;
         if (gConfigNotifications.guest_warnings)
         {
-            news_item_add_to_queue(NEWS_ITEM_PEEPS, STR_PEEPS_CANT_FIND_BATHROOM, 22);
+            news_item_add_to_queue(NEWS_ITEM_PEEPS, STR_PEEPS_CANT_FIND_TOILET, 22);
         }
     }
 
@@ -1473,9 +1482,9 @@ void peep_update_days_in_queue()
     {
         if (peep->outside_of_park == 0 && peep->state == PEEP_STATE_QUEUING)
         {
-            if (peep->days_in_queue < 255)
+            if (peep->DaysInQueue < 255)
             {
-                peep->days_in_queue += 1;
+                peep->DaysInQueue += 1;
             }
         }
     }
@@ -1625,15 +1634,15 @@ Peep* Peep::Generate(const CoordsXYZ& coords)
     peep->no_action_frame_num = 0;
     peep->action_sprite_type = PEEP_ACTION_SPRITE_TYPE_NONE;
     peep->peep_flags = 0;
-    peep->favourite_ride = RIDE_ID_NULL;
-    peep->favourite_ride_rating = 0;
+    peep->FavouriteRide = RIDE_ID_NULL;
+    peep->FavouriteRideRating = 0;
 
     const rct_sprite_bounds* spriteBounds = g_peep_animation_entries[peep->sprite_type].sprite_bounds;
     peep->sprite_width = spriteBounds[peep->action_sprite_type].sprite_width;
     peep->sprite_height_negative = spriteBounds[peep->action_sprite_type].sprite_height_negative;
     peep->sprite_height_positive = spriteBounds[peep->action_sprite_type].sprite_height_positive;
 
-    peep->MoveTo(coords.x, coords.y, coords.z);
+    peep->MoveTo(coords);
     peep->sprite_direction = 0;
     peep->mass = (scenario_rand() & 0x1F) + 45;
     peep->path_check_optimisation = 0;
@@ -1670,7 +1679,7 @@ Peep* Peep::Generate(const CoordsXYZ& coords)
         intensityHighest = 15;
     }
 
-    peep->intensity = (intensityHighest << 4) | intensityLowest;
+    peep->intensity = IntensityRange(intensityLowest, intensityHighest);
 
     uint8_t nauseaTolerance = scenario_rand() & 0x7;
     if (gParkFlags & PARK_FLAGS_PREF_MORE_INTENSE_RIDES)
@@ -1749,23 +1758,23 @@ Peep* Peep::Generate(const CoordsXYZ& coords)
     peep->pathfind_goal.y = 0xFF;
     peep->pathfind_goal.z = 0xFF;
     peep->pathfind_goal.direction = INVALID_DIRECTION;
-    peep->item_standard_flags = 0;
+    peep->ItemStandardFlags = 0;
     peep->item_extra_flags = 0;
     peep->guest_heading_to_ride_id = RIDE_ID_NULL;
     peep->litter_count = 0;
-    peep->disgusting_count = 0;
-    peep->vandalism_seen = 0;
-    peep->paid_to_enter = 0;
-    peep->paid_on_rides = 0;
-    peep->paid_on_food = 0;
+    peep->DisgustingCount = 0;
+    peep->VandalismSeen = 0;
+    peep->PaidToEnter = 0;
+    peep->PaidOnRides = 0;
+    peep->PaidOnFood = 0;
     peep->paid_on_drink = 0;
-    peep->paid_on_souvenirs = 0;
-    peep->no_of_food = 0;
-    peep->no_of_drinks = 0;
-    peep->no_of_souvenirs = 0;
-    peep->surroundings_thought_timeout = 0;
-    peep->angriness = 0;
-    peep->time_lost = 0;
+    peep->PaidOnSouvenirs = 0;
+    peep->AmountOfFood = 0;
+    peep->AmountOfDrinks = 0;
+    peep->AmountOfSouvenirs = 0;
+    peep->SurroundingsThoughtTimeout = 0;
+    peep->Angriness = 0;
+    peep->TimeLost = 0;
 
     uint8_t tshirtColour = static_cast<uint8_t>(scenario_rand() % std::size(tshirt_colours));
     peep->tshirt_colour = tshirt_colours[tshirtColour];
@@ -1784,16 +1793,21 @@ Peep* Peep::Generate(const CoordsXYZ& coords)
     return peep;
 }
 
+void Peep::FormatActionTo(Formatter& ft) const
+{
+    FormatActionTo(ft.Buf());
+}
+
 void Peep::FormatActionTo(void* argsV) const
 {
-    auto args = (uint8_t*)argsV;
+    Formatter ft(static_cast<uint8_t*>(argsV));
     switch (state)
     {
         case PEEP_STATE_FALLING:
-            set_format_arg_on(args, 0, rct_string_id, action == PEEP_ACTION_DROWNING ? STR_DROWNING : STR_WALKING);
+            ft.Add<rct_string_id>(action == PEEP_ACTION_DROWNING ? STR_DROWNING : STR_WALKING);
             break;
         case PEEP_STATE_1:
-            set_format_arg_on(args, 0, rct_string_id, STR_WALKING);
+            ft.Add<rct_string_id>(STR_WALKING);
             break;
         case PEEP_STATE_ON_RIDE:
         case PEEP_STATE_LEAVING_RIDE:
@@ -1802,28 +1816,26 @@ void Peep::FormatActionTo(void* argsV) const
             auto ride = get_ride(current_ride);
             if (ride != nullptr)
             {
-                set_format_arg_on(
-                    args, 0, rct_string_id, ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IN_RIDE) ? STR_IN_RIDE : STR_ON_RIDE);
-                ride->FormatNameTo(args + 2);
+                ft.Add<rct_string_id>(ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IN_RIDE) ? STR_IN_RIDE : STR_ON_RIDE);
+                ride->FormatNameTo(ft.Buf());
             }
             else
             {
-                set_format_arg_on(args, 0, rct_string_id, STR_ON_RIDE);
-                set_format_arg_on(args, 2, rct_string_id, STR_NONE);
+                ft.Add<rct_string_id>(STR_ON_RIDE).Add<rct_string_id>(STR_NONE);
             }
             break;
         }
         case PEEP_STATE_BUYING:
         {
-            set_format_arg_on(args, 0, rct_string_id, STR_AT_RIDE);
+            ft.Add<rct_string_id>(STR_AT_RIDE);
             auto ride = get_ride(current_ride);
             if (ride != nullptr)
             {
-                ride->FormatNameTo(args + 2);
+                ride->FormatNameTo(ft.Buf());
             }
             else
             {
-                set_format_arg_on(args, 2, rct_string_id, STR_NONE);
+                ft.Add<rct_string_id>(STR_NONE);
             }
             break;
         }
@@ -1834,14 +1846,13 @@ void Peep::FormatActionTo(void* argsV) const
                 auto ride = get_ride(guest_heading_to_ride_id);
                 if (ride != nullptr)
                 {
-                    set_format_arg_on(args, 0, rct_string_id, STR_HEADING_FOR);
-                    ride->FormatNameTo(args + 2);
+                    ft.Add<rct_string_id>(STR_HEADING_FOR);
+                    ride->FormatNameTo(ft.Buf());
                 }
             }
             else
             {
-                set_format_arg_on(
-                    args, 0, rct_string_id, (peep_flags & PEEP_FLAGS_LEAVING_PARK) ? STR_LEAVING_PARK : STR_WALKING);
+                ft.Add<rct_string_id>((peep_flags & PEEP_FLAGS_LEAVING_PARK) ? STR_LEAVING_PARK : STR_WALKING);
             }
             break;
         case PEEP_STATE_QUEUING_FRONT:
@@ -1850,13 +1861,13 @@ void Peep::FormatActionTo(void* argsV) const
             auto ride = get_ride(current_ride);
             if (ride != nullptr)
             {
-                set_format_arg_on(args, 0, rct_string_id, STR_QUEUING_FOR);
-                ride->FormatNameTo(args + 2);
+                ft.Add<rct_string_id>(STR_QUEUING_FOR);
+                ride->FormatNameTo(ft.Buf());
             }
             break;
         }
         case PEEP_STATE_SITTING:
-            set_format_arg_on(args, 0, rct_string_id, STR_SITTING);
+            ft.Add<rct_string_id>(STR_SITTING);
             break;
         case PEEP_STATE_WATCHING:
             if (current_ride != RIDE_ID_NULL)
@@ -1864,109 +1875,111 @@ void Peep::FormatActionTo(void* argsV) const
                 auto ride = get_ride(current_ride);
                 if (ride != nullptr)
                 {
-                    set_format_arg_on(
-                        args, 0, rct_string_id, (current_seat & 0x1) ? STR_WATCHING_CONSTRUCTION_OF : STR_WATCHING_RIDE);
-                    ride->FormatNameTo(args + 2);
+                    ft.Add<rct_string_id>((current_seat & 0x1) ? STR_WATCHING_CONSTRUCTION_OF : STR_WATCHING_RIDE);
+                    ride->FormatNameTo(ft.Buf());
                 }
             }
             else
             {
-                set_format_arg_on(
-                    args, 0, rct_string_id,
-                    (current_seat & 0x1) ? STR_WATCHING_NEW_RIDE_BEING_CONSTRUCTED : STR_LOOKING_AT_SCENERY);
+                ft.Add<rct_string_id>((current_seat & 0x1) ? STR_WATCHING_NEW_RIDE_BEING_CONSTRUCTED : STR_LOOKING_AT_SCENERY);
             }
             break;
         case PEEP_STATE_PICKED:
-            set_format_arg_on(args, 0, rct_string_id, STR_SELECT_LOCATION);
+            ft.Add<rct_string_id>(STR_SELECT_LOCATION);
             break;
         case PEEP_STATE_PATROLLING:
         case PEEP_STATE_ENTERING_PARK:
         case PEEP_STATE_LEAVING_PARK:
-            set_format_arg_on(args, 0, rct_string_id, STR_WALKING);
+            ft.Add<rct_string_id>(STR_WALKING);
             break;
         case PEEP_STATE_MOWING:
-            set_format_arg_on(args, 0, rct_string_id, STR_MOWING_GRASS);
+            ft.Add<rct_string_id>(STR_MOWING_GRASS);
             break;
         case PEEP_STATE_SWEEPING:
-            set_format_arg_on(args, 0, rct_string_id, STR_SWEEPING_FOOTPATH);
+            ft.Add<rct_string_id>(STR_SWEEPING_FOOTPATH);
             break;
         case PEEP_STATE_WATERING:
-            set_format_arg_on(args, 0, rct_string_id, STR_WATERING_GARDENS);
+            ft.Add<rct_string_id>(STR_WATERING_GARDENS);
             break;
         case PEEP_STATE_EMPTYING_BIN:
-            set_format_arg_on(args, 0, rct_string_id, STR_EMPTYING_LITTER_BIN);
+            ft.Add<rct_string_id>(STR_EMPTYING_LITTER_BIN);
             break;
         case PEEP_STATE_ANSWERING:
             if (sub_state == 0)
             {
-                set_format_arg_on(args, 0, rct_string_id, STR_WALKING);
+                ft.Add<rct_string_id>(STR_WALKING);
             }
             else if (sub_state == 1)
             {
-                set_format_arg_on(args, 0, rct_string_id, STR_ANSWERING_RADIO_CALL);
+                ft.Add<rct_string_id>(STR_ANSWERING_RADIO_CALL);
             }
             else
             {
-                set_format_arg_on(args, 0, rct_string_id, STR_RESPONDING_TO_RIDE_BREAKDOWN_CALL);
+                ft.Add<rct_string_id>(STR_RESPONDING_TO_RIDE_BREAKDOWN_CALL);
                 auto ride = get_ride(current_ride);
                 if (ride != nullptr)
                 {
-                    ride->FormatNameTo(args + 2);
+                    ride->FormatNameTo(ft.Buf());
                 }
                 else
                 {
-                    set_format_arg_on(args, 2, rct_string_id, STR_NONE);
+                    ft.Add<rct_string_id>(STR_NONE);
                 }
             }
             break;
         case PEEP_STATE_FIXING:
         {
-            set_format_arg_on(args, 0, rct_string_id, STR_FIXING_RIDE);
+            ft.Add<rct_string_id>(STR_FIXING_RIDE);
             auto ride = get_ride(current_ride);
             if (ride != nullptr)
             {
-                ride->FormatNameTo(args + 2);
+                ride->FormatNameTo(ft.Buf());
             }
             else
             {
-                set_format_arg_on(args, 2, rct_string_id, STR_NONE);
+                ft.Add<rct_string_id>(STR_NONE);
             }
             break;
         }
         case PEEP_STATE_HEADING_TO_INSPECTION:
         {
-            set_format_arg_on(args, 0, rct_string_id, STR_HEADING_TO_RIDE_FOR_INSPECTION);
+            ft.Add<rct_string_id>(STR_HEADING_TO_RIDE_FOR_INSPECTION);
             auto ride = get_ride(current_ride);
             if (ride != nullptr)
             {
-                ride->FormatNameTo(args + 2);
+                ride->FormatNameTo(ft.Buf());
             }
             else
             {
-                set_format_arg_on(args, 2, rct_string_id, STR_NONE);
+                ft.Add<rct_string_id>(STR_NONE);
             }
             break;
         }
         case PEEP_STATE_INSPECTING:
         {
-            set_format_arg_on(args, 0, rct_string_id, STR_INSPECTING_RIDE);
+            ft.Add<rct_string_id>(STR_INSPECTING_RIDE);
             auto ride = get_ride(current_ride);
             if (ride != nullptr)
             {
-                ride->FormatNameTo(args + 2);
+                ride->FormatNameTo(ft.Buf());
             }
             else
             {
-                set_format_arg_on(args, 2, rct_string_id, STR_NONE);
+                ft.Add<rct_string_id>(STR_NONE);
             }
             break;
         }
     }
 }
 
+void Peep::FormatNameTo(Formatter& ft) const
+{
+    ft.Increment(FormatNameTo(ft.Buf()));
+}
+
 size_t Peep::FormatNameTo(void* argsV) const
 {
-    auto args = (uint8_t*)argsV;
+    Formatter ft(static_cast<uint8_t*>(argsV));
     if (name == nullptr)
     {
         if (type == PeepType::PEEP_TYPE_STAFF)
@@ -1984,28 +1997,23 @@ size_t Peep::FormatNameTo(void* argsV) const
                 staffNameIndex = 0;
             }
 
-            set_format_arg_on(args, 0, rct_string_id, staffNames[staffNameIndex]);
-            set_format_arg_on(args, 2, uint32_t, id);
-            return sizeof(rct_string_id) + sizeof(uint32_t);
+            ft.Add<rct_string_id>(staffNames[staffNameIndex]);
+            ft.Add<uint32_t>(id);
+            return ft.NumBytes();
         }
         else if (gParkFlags & PARK_FLAGS_SHOW_REAL_GUEST_NAMES)
         {
             auto realNameStringId = get_real_name_string_id_from_id(id);
-            set_format_arg_on(args, 0, rct_string_id, realNameStringId);
-            return sizeof(rct_string_id);
+            return ft.Add<rct_string_id>(realNameStringId).NumBytes();
         }
         else
         {
-            set_format_arg_on(args, 0, rct_string_id, STR_GUEST_X);
-            set_format_arg_on(args, 2, uint32_t, id);
-            return sizeof(rct_string_id) + sizeof(uint32_t);
+            return ft.Add<rct_string_id>(STR_GUEST_X).Add<uint32_t>(id).NumBytes();
         }
     }
     else
     {
-        set_format_arg_on(args, 0, rct_string_id, STR_STRING);
-        set_format_arg_on(args, 2, const char*, name);
-        return sizeof(rct_string_id) + sizeof(const char*);
+        return ft.Add<rct_string_id>(STR_STRING).Add<const char*>(name).NumBytes();
     }
 }
 
@@ -2026,7 +2034,7 @@ bool Peep::SetName(const std::string_view& value)
     }
     else
     {
-        auto newNameMemory = (char*)std::malloc(value.size() + 1);
+        auto newNameMemory = static_cast<char*>(std::malloc(value.size() + 1));
         if (newNameMemory != nullptr)
         {
             std::memcpy(newNameMemory, value.data(), value.size());
@@ -2048,28 +2056,29 @@ bool Peep::SetName(const std::string_view& value)
  */
 void peep_thought_set_format_args(const rct_peep_thought* thought)
 {
-    set_format_arg(0, rct_string_id, PeepThoughts[thought->type]);
+    auto ft = Formatter::Common();
+    ft.Add<rct_string_id>(PeepThoughts[thought->type]);
 
-    uint8_t flags = PeepThoughtToActionMap[thought->type].flags;
-    if (flags & 1)
+    PeepThoughtToActionFlag flags = PeepThoughtToActionMap[thought->type].flags;
+    if (flags & PEEP_THOUGHT_ACTION_FLAG_RIDE)
     {
         auto ride = get_ride(thought->item);
         if (ride != nullptr)
         {
-            ride->FormatNameTo(gCommonFormatArgs + 2);
+            ride->FormatNameTo(ft);
         }
         else
         {
-            set_format_arg(2, rct_string_id, STR_NONE);
+            ft.Add<rct_string_id>(STR_NONE);
         }
     }
-    else if (flags & 2)
+    else if (flags & PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_SINGULAR)
     {
-        set_format_arg(2, rct_string_id, ShopItems[thought->item].Naming.Singular);
+        ft.Add<rct_string_id>(ShopItems[thought->item].Naming.Singular);
     }
-    else if (flags & 4)
+    else if (flags & PEEP_THOUGHT_ACTION_FLAG_SHOP_ITEM_INDEFINITE)
     {
-        set_format_arg(2, rct_string_id, ShopItems[thought->item].Naming.Indefinite);
+        ft.Add<rct_string_id>(ShopItems[thought->item].Naming.Indefinite);
     }
 }
 
@@ -2163,7 +2172,7 @@ static constexpr const int32_t face_sprite_large[] = {
 static int32_t get_face_sprite_offset(Peep* peep)
 {
     // ANGRY
-    if (peep->angriness > 0)
+    if (peep->Angriness > 0)
         return PEEP_FACE_OFFSET_ANGRY;
 
     // VERY_VERY_SICK
@@ -2216,19 +2225,19 @@ int32_t get_peep_face_sprite_large(Peep* peep)
 
 void peep_set_map_tooltip(Peep* peep)
 {
+    auto ft = Formatter::MapTooltip();
     if (peep->type == PEEP_TYPE_GUEST)
     {
-        set_map_tooltip_format_arg(
-            0, rct_string_id, (peep->peep_flags & PEEP_FLAGS_TRACKING) ? STR_TRACKED_GUEST_MAP_TIP : STR_GUEST_MAP_TIP);
-        set_map_tooltip_format_arg(2, uint32_t, get_peep_face_sprite_small(peep));
-        auto nameArgLen = peep->FormatNameTo(gMapTooltipFormatArgs + 6);
-        peep->FormatActionTo(gMapTooltipFormatArgs + 6 + nameArgLen);
+        ft.Add<rct_string_id>((peep->peep_flags & PEEP_FLAGS_TRACKING) ? STR_TRACKED_GUEST_MAP_TIP : STR_GUEST_MAP_TIP);
+        ft.Add<uint32_t>(get_peep_face_sprite_small(peep));
+        peep->FormatNameTo(ft);
+        peep->FormatActionTo(ft);
     }
     else
     {
-        set_map_tooltip_format_arg(0, rct_string_id, STR_STAFF_MAP_TIP);
-        auto nameArgLen = peep->FormatNameTo(gMapTooltipFormatArgs + 2);
-        peep->FormatActionTo(gMapTooltipFormatArgs + 2 + nameArgLen);
+        ft.Add<rct_string_id>(STR_STAFF_MAP_TIP);
+        peep->FormatNameTo(ft);
+        peep->FormatActionTo(ft);
     }
 }
 
@@ -2401,7 +2410,7 @@ static void peep_interact_with_entrance(Peep* peep, int16_t x, int16_t y, TileEl
             return;
         }
 
-        peep->time_lost = 0;
+        peep->TimeLost = 0;
         auto stationNum = tile_element->AsEntrance()->GetStationIndex();
         // Guest walks up to the ride for the first time since entering
         // the path tile or since considering another ride attached to
@@ -2426,14 +2435,15 @@ static void peep_interact_with_entrance(Peep* peep, int16_t x, int16_t y, TileEl
 
         peep->current_ride = rideIndex;
         peep->current_ride_station = stationNum;
-        peep->days_in_queue = 0;
+        peep->DaysInQueue = 0;
         peep->SetState(PEEP_STATE_QUEUING);
         peep->sub_state = 11;
         peep->time_in_queue = 0;
         if (peep->peep_flags & PEEP_FLAGS_TRACKING)
         {
-            auto nameArgLen = peep->FormatNameTo(gCommonFormatArgs);
-            ride->FormatNameTo(gCommonFormatArgs + nameArgLen);
+            auto ft = Formatter::Common();
+            peep->FormatNameTo(ft);
+            ride->FormatNameTo(ft);
             if (gConfigNotifications.guest_queuing_for_ride)
             {
                 news_item_add_to_queue(NEWS_ITEM_PEEP_ON_RIDE, STR_PEEP_TRACKING_PEEP_JOINED_QUEUE_FOR_X, peep->sprite_index);
@@ -2487,13 +2497,14 @@ static void peep_interact_with_entrance(Peep* peep, int16_t x, int16_t y, TileEl
             peep->destination_x += CoordsDirectionDelta[peep->direction].x;
             peep->destination_y += CoordsDirectionDelta[peep->direction].y;
             peep->destination_tolerance = 9;
-            peep->MoveTo(x, y, peep->z);
+            peep->MoveTo({ x, y, peep->z });
             peep->SetState(PEEP_STATE_LEAVING_PARK);
 
             peep->var_37 = 0;
             if (peep->peep_flags & PEEP_FLAGS_TRACKING)
             {
-                peep->FormatNameTo(gCommonFormatArgs);
+                auto ft = Formatter::Common();
+                peep->FormatNameTo(ft);
                 if (gConfigNotifications.guest_left_park)
                 {
                     news_item_add_to_queue(NEWS_ITEM_PEEP_ON_RIDE, STR_PEEP_TRACKING_LEFT_PARK, peep->sprite_index);
@@ -2590,18 +2601,18 @@ static void peep_interact_with_entrance(Peep* peep, int16_t x, int16_t y, TileEl
         money16 entranceFee = park_get_entrance_fee();
         if (entranceFee != 0)
         {
-            if (peep->item_standard_flags & PEEP_ITEM_VOUCHER)
+            if (peep->ItemStandardFlags & PEEP_ITEM_VOUCHER)
             {
-                if (peep->voucher_type == VOUCHER_TYPE_PARK_ENTRY_HALF_PRICE)
+                if (peep->VoucherType == VOUCHER_TYPE_PARK_ENTRY_HALF_PRICE)
                 {
                     entranceFee /= 2;
-                    peep->item_standard_flags &= ~PEEP_ITEM_VOUCHER;
+                    peep->ItemStandardFlags &= ~PEEP_ITEM_VOUCHER;
                     peep->window_invalidate_flags |= PEEP_INVALIDATE_PEEP_INVENTORY;
                 }
-                else if (peep->voucher_type == VOUCHER_TYPE_PARK_ENTRY_FREE)
+                else if (peep->VoucherType == VOUCHER_TYPE_PARK_ENTRY_FREE)
                 {
                     entranceFee = 0;
-                    peep->item_standard_flags &= ~PEEP_ITEM_VOUCHER;
+                    peep->ItemStandardFlags &= ~PEEP_ITEM_VOUCHER;
                     peep->window_invalidate_flags |= PEEP_INVALIDATE_PEEP_INVENTORY;
                 }
             }
@@ -2616,7 +2627,7 @@ static void peep_interact_with_entrance(Peep* peep, int16_t x, int16_t y, TileEl
             }
 
             gTotalIncomeFromAdmissions += entranceFee;
-            guest->SpendMoney(peep->paid_to_enter, entranceFee, ExpenditureType::ParkEntranceTickets);
+            guest->SpendMoney(peep->PaidToEnter, entranceFee, ExpenditureType::ParkEntranceTickets);
             peep->peep_flags |= PEEP_FLAGS_HAS_PAID_FOR_PARK_ENTRY;
         }
 
@@ -2627,7 +2638,7 @@ static void peep_interact_with_entrance(Peep* peep, int16_t x, int16_t y, TileEl
         peep->destination_x += CoordsDirectionDelta[peep->direction].x;
         peep->destination_y += CoordsDirectionDelta[peep->direction].y;
         peep->destination_tolerance = 7;
-        peep->MoveTo(x, y, peep->z);
+        peep->MoveTo({ x, y, peep->z });
     }
 }
 
@@ -2644,13 +2655,13 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
 
     if (peep->type == PEEP_TYPE_STAFF)
     {
-        peep->MoveTo(x, y, z);
+        peep->MoveTo({ x, y, z });
         return;
     }
 
-    uint8_t vandalThoughtTimeout = (peep->vandalism_seen & 0xC0) >> 6;
+    uint8_t vandalThoughtTimeout = (peep->VandalismSeen & 0xC0) >> 6;
     // Advance the vandalised tiles by 1
-    uint8_t vandalisedTiles = (peep->vandalism_seen * 2) & 0x3F;
+    uint8_t vandalisedTiles = (peep->VandalismSeen * 2) & 0x3F;
 
     if (vandalism)
     {
@@ -2673,7 +2684,7 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
         vandalThoughtTimeout--;
     }
 
-    peep->vandalism_seen = (vandalThoughtTimeout << 6) | vandalisedTiles;
+    peep->VandalismSeen = (vandalThoughtTimeout << 6) | vandalisedTiles;
     uint16_t crowded = 0;
     uint8_t litter_count = 0;
     uint8_t sick_count = 0;
@@ -2681,9 +2692,9 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
     for (rct_sprite* sprite; sprite_id != SPRITE_INDEX_NULL; sprite_id = sprite->generic.next_in_quadrant)
     {
         sprite = get_sprite(sprite_id);
-        if (sprite->generic.sprite_identifier == SPRITE_IDENTIFIER_PEEP)
+        if (sprite->IsPeep())
         {
-            Peep* other_peep = (Peep*)sprite;
+            Peep* other_peep = reinterpret_cast<Peep*>(sprite);
             if (other_peep->state != PEEP_STATE_WALKING)
                 continue;
 
@@ -2694,7 +2705,7 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
         }
         else if (sprite->generic.sprite_identifier == SPRITE_IDENTIFIER_LITTER)
         {
-            Litter* litter = (Litter*)sprite;
+            Litter* litter = reinterpret_cast<Litter*>(sprite);
             if (abs(litter->z - peep->NextLoc.z) > 16)
                 continue;
 
@@ -2716,14 +2727,14 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
     litter_count = std::min(static_cast<uint8_t>(3), litter_count);
     sick_count = std::min(static_cast<uint8_t>(3), sick_count);
 
-    uint8_t disgusting_time = peep->disgusting_count & 0xC0;
-    uint8_t disgusting_count = ((peep->disgusting_count & 0xF) << 2) | sick_count;
-    peep->disgusting_count = disgusting_count | disgusting_time;
+    uint8_t disgusting_time = peep->DisgustingCount & 0xC0;
+    uint8_t disgusting_count = ((peep->DisgustingCount & 0xF) << 2) | sick_count;
+    peep->DisgustingCount = disgusting_count | disgusting_time;
 
     if (disgusting_time & 0xC0 && (scenario_rand() & 0xFFFF) <= 4369)
     {
         // Reduce the disgusting time
-        peep->disgusting_count -= 0x40;
+        peep->DisgustingCount -= 0x40;
     }
     else
     {
@@ -2738,7 +2749,7 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
             peep->InsertNewThought(PEEP_THOUGHT_TYPE_PATH_DISGUSTING, PEEP_THOUGHT_ITEM_NONE);
             peep->happiness_target = std::max(0, peep->happiness_target - 17);
             // Reset disgusting time
-            peep->disgusting_count |= 0xC0;
+            peep->DisgustingCount |= 0xC0;
         }
     }
 
@@ -2768,7 +2779,7 @@ static void peep_footpath_move_forward(Peep* peep, int16_t x, int16_t y, TileEle
         }
     }
 
-    peep->MoveTo(x, y, z);
+    peep->MoveTo({ x, y, z });
 }
 
 /**
@@ -2828,7 +2839,7 @@ static void peep_interact_with_path(Peep* peep, int16_t x, int16_t y, TileElemen
         else
         {
             // Peep is not queuing.
-            peep->time_lost = 0;
+            peep->TimeLost = 0;
             auto stationNum = tile_element->AsPath()->GetStationIndex();
 
             if ((tile_element->AsPath()->HasQueueBanner())
@@ -2854,7 +2865,7 @@ static void peep_interact_with_path(Peep* peep, int16_t x, int16_t y, TileElemen
                     peep->current_ride = rideIndex;
                     peep->current_ride_station = stationNum;
                     peep->state = PEEP_STATE_QUEUING;
-                    peep->days_in_queue = 0;
+                    peep->DaysInQueue = 0;
                     peep_window_state_update(peep);
 
                     peep->sub_state = 10;
@@ -2862,8 +2873,9 @@ static void peep_interact_with_path(Peep* peep, int16_t x, int16_t y, TileElemen
                     peep->time_in_queue = 0;
                     if (peep->peep_flags & PEEP_FLAGS_TRACKING)
                     {
-                        auto nameArgLen = peep->FormatNameTo(gCommonFormatArgs);
-                        ride->FormatNameTo(gCommonFormatArgs + nameArgLen);
+                        auto ft = Formatter::Common();
+                        peep->FormatNameTo(ft);
+                        ride->FormatNameTo(ft);
                         if (gConfigNotifications.guest_queuing_for_ride)
                         {
                             news_item_add_to_queue(
@@ -2917,7 +2929,7 @@ static bool peep_interact_with_shop(Peep* peep, int16_t x, int16_t y, TileElemen
         return true;
     }
 
-    peep->time_lost = 0;
+    peep->TimeLost = 0;
 
     if (ride->status != RIDE_STATUS_OPEN)
     {
@@ -2939,14 +2951,14 @@ static bool peep_interact_with_shop(Peep* peep, int16_t x, int16_t y, TileElemen
 
     if (ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_PEEP_SHOULD_GO_INSIDE_FACILITY))
     {
-        peep->time_lost = 0;
+        peep->TimeLost = 0;
         if (!guest->ShouldGoOnRide(ride, 0, false, false))
         {
             peep_return_to_centre_of_tile(peep);
             return true;
         }
 
-        money16 cost = ride->price;
+        money16 cost = ride->price[0];
         if (cost != 0 && !(gParkFlags & PARK_FLAGS_NO_MONEY))
         {
             ride->total_profit += cost;
@@ -2968,8 +2980,9 @@ static bool peep_interact_with_shop(Peep* peep, int16_t x, int16_t y, TileElemen
         ride->cur_num_customers++;
         if (peep->peep_flags & PEEP_FLAGS_TRACKING)
         {
-            auto nameArgLen = peep->FormatNameTo(gCommonFormatArgs);
-            ride->FormatNameTo(gCommonFormatArgs + nameArgLen);
+            auto ft = Formatter::Common();
+            peep->FormatNameTo(ft);
+            ride->FormatNameTo(ft);
             rct_string_id string_id = ride_type_has_flag(ride->type, RIDE_TYPE_FLAG_IN_RIDE) ? STR_PEEP_TRACKING_PEEP_IS_IN_X
                                                                                              : STR_PEEP_TRACKING_PEEP_IS_ON_X;
             if (gConfigNotifications.guest_used_facility)
@@ -3071,11 +3084,11 @@ void Peep::PerformNextAction(uint8_t& pathing_result, TileElement*& tile_result)
     if (truncatedNewLoc == CoordsXY{ NextLoc })
     {
         int16_t height = GetZOnSlope(newLoc.x, newLoc.y);
-        MoveTo(newLoc.x, newLoc.y, height);
+        MoveTo({ newLoc.x, newLoc.y, height });
         return;
     }
 
-    if (newLoc.x < 32 || newLoc.y < 32 || newLoc.x >= gMapSizeUnits || newLoc.y >= gMapSizeUnits)
+    if (map_is_edge(newLoc))
     {
         if (outside_of_park == 1)
         {
@@ -3169,7 +3182,7 @@ void Peep::PerformNextAction(uint8_t& pathing_result, TileElement*& tile_result)
             SetNextFlags(0, false, true);
 
             height = GetZOnSlope(newLoc.x, newLoc.y);
-            MoveTo(newLoc.x, newLoc.y, height);
+            MoveTo({ newLoc.x, newLoc.y, height });
             return;
         }
     }
@@ -3218,7 +3231,7 @@ int32_t Peep::GetZOnSlope(int32_t tile_x, int32_t tile_y)
 rct_string_id get_real_name_string_id_from_id(uint32_t id)
 {
     // Generate a name_string_idx from the peep id using bit twiddling
-    uint16_t ax = (uint16_t)(id + 0xF0B);
+    uint16_t ax = static_cast<uint16_t>(id + 0xF0B);
     uint16_t dx = 0;
     static constexpr uint16_t twiddlingBitOrder[] = { 4, 9, 3, 7, 5, 8, 2, 1, 6, 0, 12, 11, 13, 10 };
     for (size_t i = 0; i < std::size(twiddlingBitOrder); i++)
@@ -3238,10 +3251,10 @@ rct_string_id get_real_name_string_id_from_id(uint32_t id)
     return dx;
 }
 
-int32_t peep_compare(const void* sprite_index_a, const void* sprite_index_b)
+int32_t peep_compare(const uint16_t sprite_index_a, const uint16_t sprite_index_b)
 {
-    Peep const* peep_a = GET_PEEP(*(uint16_t*)sprite_index_a);
-    Peep const* peep_b = GET_PEEP(*(uint16_t*)sprite_index_b);
+    Peep const* peep_a = GET_PEEP(sprite_index_a);
+    Peep const* peep_b = GET_PEEP(sprite_index_b);
 
     // Compare types
     if (peep_a->type != peep_b->type)
@@ -3379,13 +3392,13 @@ void decrement_guests_heading_for_park()
 
 static void peep_release_balloon(Guest* peep, int16_t spawn_height)
 {
-    if (peep->item_standard_flags & PEEP_ITEM_BALLOON)
+    if (peep->ItemStandardFlags & PEEP_ITEM_BALLOON)
     {
-        peep->item_standard_flags &= ~PEEP_ITEM_BALLOON;
+        peep->ItemStandardFlags &= ~PEEP_ITEM_BALLOON;
 
         if (peep->sprite_type == PEEP_SPRITE_TYPE_BALLOON && peep->x != LOCATION_NULL)
         {
-            create_balloon(peep->x, peep->y, spawn_height, peep->balloon_colour, false);
+            create_balloon(peep->x, peep->y, spawn_height, peep->BalloonColour, false);
             peep->window_invalidate_flags |= PEEP_INVALIDATE_PEEP_INVENTORY;
             peep->UpdateSpriteType();
         }

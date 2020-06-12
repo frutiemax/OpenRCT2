@@ -246,27 +246,27 @@ static void CompareSpriteDataPeep(const Peep& left, const Peep& right)
     COMPARE_FIELD(no_action_frame_num);
     COMPARE_FIELD(litter_count);
     COMPARE_FIELD(time_on_ride);
-    COMPARE_FIELD(disgusting_count);
-    COMPARE_FIELD(paid_to_enter);
-    COMPARE_FIELD(paid_on_rides);
-    COMPARE_FIELD(paid_on_food);
-    COMPARE_FIELD(paid_on_souvenirs);
-    COMPARE_FIELD(no_of_food);
-    COMPARE_FIELD(no_of_drinks);
-    COMPARE_FIELD(no_of_souvenirs);
-    COMPARE_FIELD(vandalism_seen);
-    COMPARE_FIELD(voucher_type);
-    COMPARE_FIELD(voucher_arguments);
-    COMPARE_FIELD(surroundings_thought_timeout);
-    COMPARE_FIELD(angriness);
-    COMPARE_FIELD(time_lost);
-    COMPARE_FIELD(days_in_queue);
-    COMPARE_FIELD(balloon_colour);
-    COMPARE_FIELD(umbrella_colour);
-    COMPARE_FIELD(hat_colour);
-    COMPARE_FIELD(favourite_ride);
-    COMPARE_FIELD(favourite_ride_rating);
-    COMPARE_FIELD(item_standard_flags);
+    COMPARE_FIELD(DisgustingCount);
+    COMPARE_FIELD(PaidToEnter);
+    COMPARE_FIELD(PaidOnRides);
+    COMPARE_FIELD(PaidOnFood);
+    COMPARE_FIELD(PaidOnSouvenirs);
+    COMPARE_FIELD(AmountOfFood);
+    COMPARE_FIELD(AmountOfDrinks);
+    COMPARE_FIELD(AmountOfSouvenirs);
+    COMPARE_FIELD(VandalismSeen);
+    COMPARE_FIELD(VoucherType);
+    COMPARE_FIELD(VoucherArguments);
+    COMPARE_FIELD(SurroundingsThoughtTimeout);
+    COMPARE_FIELD(Angriness);
+    COMPARE_FIELD(TimeLost);
+    COMPARE_FIELD(DaysInQueue);
+    COMPARE_FIELD(BalloonColour);
+    COMPARE_FIELD(UmbrellaColour);
+    COMPARE_FIELD(HatColour);
+    COMPARE_FIELD(FavouriteRide);
+    COMPARE_FIELD(FavouriteRideRating);
+    COMPARE_FIELD(ItemStandardFlags);
 }
 
 static void CompareSpriteDataVehicle(const Vehicle& left, const Vehicle& right)
@@ -291,10 +291,10 @@ static void CompareSpriteDataVehicle(const Vehicle& left, const Vehicle& right)
     COMPARE_FIELD(var_44);
     COMPARE_FIELD(mass);
     COMPARE_FIELD(update_flags);
-    COMPARE_FIELD(swing_sprite);
+    COMPARE_FIELD(SwingSprite);
     COMPARE_FIELD(current_station);
-    COMPARE_FIELD(swinging_car_var_0);
-    COMPARE_FIELD(var_4E);
+    COMPARE_FIELD(SwingPosition);
+    COMPARE_FIELD(SwingSpeed);
     COMPARE_FIELD(status);
     COMPARE_FIELD(sub_state);
     for (int i = 0; i < 32; i++)
@@ -355,12 +355,12 @@ static void CompareSpriteDataSteamParticle(const SteamParticle& left, const Stea
 
 static void CompareSpriteDataMoneyEffect(const MoneyEffect& left, const MoneyEffect& right)
 {
-    COMPARE_FIELD(move_delay);
-    COMPARE_FIELD(num_movements);
-    COMPARE_FIELD(vertical);
-    COMPARE_FIELD(value);
-    COMPARE_FIELD(offset_x);
-    COMPARE_FIELD(wiggle);
+    COMPARE_FIELD(MoveDelay);
+    COMPARE_FIELD(NumMovements);
+    COMPARE_FIELD(Vertical);
+    COMPARE_FIELD(Value);
+    COMPARE_FIELD(OffsetX);
+    COMPARE_FIELD(Wiggle);
 }
 
 static void CompareSpriteDataCrashedVehicleParticle(const VehicleCrashParticle& left, const VehicleCrashParticle& right)

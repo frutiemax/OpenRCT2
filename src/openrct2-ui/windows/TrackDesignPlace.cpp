@@ -23,11 +23,18 @@
 #include <openrct2/ride/TrackDesign.h>
 #include <openrct2/ride/TrackDesignRepository.h>
 #include <openrct2/sprites.h>
+#include <openrct2/ui/UiContext.h>
+#include <openrct2/ui/WindowManager.h>
 #include <openrct2/windows/Intent.h>
 #include <openrct2/world/Park.h>
 #include <openrct2/world/Surface.h>
 #include <vector>
 
+using namespace OpenRCT2;
+
+static constexpr const rct_string_id WINDOW_TITLE = STR_STRING;
+static constexpr const int32_t WH = 124;
+static constexpr const int32_t WW = 200;
 constexpr int16_t TRACK_MINI_PREVIEW_WIDTH = 168;
 constexpr int16_t TRACK_MINI_PREVIEW_HEIGHT = 78;
 constexpr uint16_t TRACK_MINI_PREVIEW_SIZE = TRACK_MINI_PREVIEW_WIDTH * TRACK_MINI_PREVIEW_HEIGHT;
@@ -53,9 +60,7 @@ enum {
 validate_global_widx(WC_TRACK_DESIGN_PLACE, WIDX_ROTATE);
 
 static rct_widget window_track_place_widgets[] = {
-    { WWT_FRAME,            0,  0,      199,    0,      123,    0xFFFFFFFF,                     STR_NONE                                    },
-    { WWT_CAPTION,          0,  1,      198,    1,      14,     STR_STRING,                     STR_WINDOW_TITLE_TIP                        },
-    { WWT_CLOSEBOX,         0,  187,    197,    2,      13,     STR_CLOSE_X,                    STR_CLOSE_WINDOW_TIP                        },
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_FLATBTN,          0,  173,    196,    83,     106,    SPR_ROTATE_ARROW,               STR_ROTATE_90_TIP                           },
     { WWT_FLATBTN,          0,  173,    196,    59,     82,     SPR_MIRROR_ARROW,               STR_MIRROR_IMAGE_TIP                        },
     { WWT_BUTTON,           0,  4,      195,    109,    120,    STR_SELECT_A_DIFFERENT_DESIGN,  STR_GO_BACK_TO_DESIGN_SELECTION_WINDOW_TIP  },
@@ -221,8 +226,8 @@ static void window_track_place_mouseup(rct_window* w, rct_widgetindex widgetInde
             window_close(w);
 
             auto intent = Intent(WC_TRACK_DESIGN_LIST);
-            intent.putExtra(INTENT_EXTRA_RIDE_TYPE, _window_track_list_item.type);
-            intent.putExtra(INTENT_EXTRA_RIDE_ENTRY_INDEX, _window_track_list_item.entry_index);
+            intent.putExtra(INTENT_EXTRA_RIDE_TYPE, _window_track_list_item.Type);
+            intent.putExtra(INTENT_EXTRA_RIDE_ENTRY_INDEX, _window_track_list_item.EntryIndex);
             context_open_intent(&intent);
             break;
     }
@@ -391,8 +396,9 @@ static void window_track_place_tooldown(rct_window* w, rct_widgetindex widgetInd
 
     // Unable to build track
     audio_play_sound_at_location(SoundId::Error, trackLoc);
-    std::copy(res->ErrorMessageArgs.begin(), res->ErrorMessageArgs.end(), gCommonFormatArgs);
-    context_show_error(res->ErrorTitle, res->ErrorMessage);
+
+    auto windowManager = GetContext()->GetUiContext()->GetWindowManager();
+    windowManager->ShowError(res->GetErrorTitle(), res->GetErrorMessage());
 }
 
 /**
@@ -503,7 +509,8 @@ static int32_t window_track_place_get_base_z(const CoordsXY& loc)
  */
 static void window_track_place_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
-    set_format_arg(0, char*, _trackDesign->name.c_str());
+    auto ft = Formatter::Common();
+    ft.Add<char*>(_trackDesign->name.c_str());
     window_draw_widgets(w, dpi);
 
     // Draw mini tile preview
@@ -522,7 +529,7 @@ static void window_track_place_paint(rct_window* w, rct_drawpixelinfo* dpi)
     if (_window_track_place_last_cost != MONEY32_UNDEFINED && !(gParkFlags & PARK_FLAGS_NO_MONEY))
     {
         gfx_draw_string_centred(
-            dpi, STR_COST_LABEL, w->windowPos.x + 88, w->windowPos.y + 94, COLOUR_BLACK, &_window_track_place_last_cost);
+            dpi, STR_COST_LABEL, { w->windowPos.x + 88, w->windowPos.y + 94 }, COLOUR_BLACK, &_window_track_place_last_cost);
     }
 }
 

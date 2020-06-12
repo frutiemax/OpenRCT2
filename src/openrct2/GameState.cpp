@@ -26,6 +26,7 @@
 #include "peep/Staff.h"
 #include "platform/Platform2.h"
 #include "scenario/Scenario.h"
+#include "scripting/ScriptEngine.h"
 #include "title/TitleScreen.h"
 #include "title/TitleSequencePlayer.h"
 #include "ui/UiContext.h"
@@ -38,6 +39,7 @@
 #include <algorithm>
 
 using namespace OpenRCT2;
+using namespace OpenRCT2::Scripting;
 
 GameState::GameState()
 {
@@ -267,8 +269,14 @@ void GameState::UpdateLogic()
         }
     }
 
+#ifdef ENABLE_SCRIPTING
+    // Stash the current day number before updating the date so that we
+    // know if the day number changes on this tick.
+    auto day = _date.GetDay();
+#endif
+
     date_update();
-    _date = Date(gDateMonthTicks, gDateMonthTicks);
+    _date = Date(gDateMonthsElapsed, gDateMonthTicks);
 
     scenario_update();
     climate_update();
@@ -315,6 +323,16 @@ void GameState::UpdateLogic()
     gCurrentTicks++;
     gScenarioTicks++;
     gSavedAge++;
+
+#ifdef ENABLE_SCRIPTING
+    auto& hookEngine = GetContext()->GetScriptEngine().GetHookEngine();
+    hookEngine.Call(HOOK_TYPE::INTERVAL_TICK, true);
+
+    if (day != _date.GetDay())
+    {
+        hookEngine.Call(HOOK_TYPE::INTERVAL_DAY, true);
+    }
+#endif
 }
 
 void GameState::CreateStateSnapshot()

@@ -111,19 +111,6 @@ bool platform_original_game_data_exists(const utf8* path)
     return platform_file_exists(checkPath);
 }
 
-bool platform_original_rct1_data_exists(const utf8* path)
-{
-    char checkPath[MAX_PATH];
-    char checkPath2[MAX_PATH];
-    safe_strcpy(checkPath, path, MAX_PATH);
-    safe_strcpy(checkPath2, path, MAX_PATH);
-    safe_strcat_path(checkPath, "Data", MAX_PATH);
-    safe_strcat_path(checkPath2, "Data", MAX_PATH);
-    safe_strcat_path(checkPath, "csg1.dat", MAX_PATH);
-    safe_strcat_path(checkPath2, "csg1.1", MAX_PATH);
-    return platform_file_exists(checkPath) || platform_file_exists(checkPath2);
-}
-
 bool platform_ensure_directory_exists(const utf8* path)
 {
     if (platform_directory_exists(path))
@@ -415,8 +402,8 @@ uint8_t platform_get_locale_date_format()
     wchar_t first[sizeof(dateFormat)];
     wchar_t second[sizeof(dateFormat)];
     if (swscanf_s(
-            dateFormat, L"%l[dyM]%*l[^dyM]%l[dyM]%*l[^dyM]%*l[dyM]", first, (uint32_t)std::size(first), second,
-            (uint32_t)std::size(second))
+            dateFormat, L"%l[dyM]%*l[^dyM]%l[dyM]%*l[^dyM]%*l[dyM]", first, static_cast<uint32_t>(std::size(first)), second,
+            static_cast<uint32_t>(std::size(second)))
         != 2)
     {
         return DATE_FORMAT_DAY_MONTH_YEAR;

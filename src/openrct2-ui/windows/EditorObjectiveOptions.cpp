@@ -32,6 +32,10 @@
 #include <openrct2/util/Util.h>
 #include <openrct2/world/Park.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_OBJECTIVE_SELECTION;
+static constexpr const int32_t WH = 229;
+static constexpr const int32_t WW = 450;
+
 #pragma region Widgets
 
 // clang-format off
@@ -82,9 +86,7 @@ enum {
 };
 
 #define MAIN_OBJECTIVE_OPTIONS_WIDGETS \
-    { WWT_FRAME,            0,  0,      449,    0,      228,    STR_NONE,                   STR_NONE                                            }, \
-    { WWT_CAPTION,          0,  1,      448,    1,      14,     STR_OBJECTIVE_SELECTION,    STR_WINDOW_TITLE_TIP                                }, \
-    { WWT_CLOSEBOX,         0,  437,    447,    2,      13,     STR_CLOSE_X,                STR_CLOSE_WINDOW_TIP                                }, \
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH), \
     { WWT_RESIZE,           1,  0,      279,    43,     148,    STR_NONE,                   STR_NONE                                            }, \
     { WWT_TAB,              1,  3,      33,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB, STR_SELECT_OBJECTIVE_AND_PARK_NAME_TIP              }, \
     { WWT_TAB,              1,  34,     64,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB, STR_SELECT_RIDES_TO_BE_PRESERVED_TIP                }
@@ -484,7 +486,7 @@ static void window_editor_objective_options_show_objective_dropdown(rct_window* 
     numItems++;
 
     window_dropdown_show_text_custom_width(
-        w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top,
+        { w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top },
         dropdownWidget->bottom - dropdownWidget->top + 1, w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, numItems,
         dropdownWidget->right - dropdownWidget->left - 3);
 
@@ -512,7 +514,7 @@ static void window_editor_objective_options_show_category_dropdown(rct_window* w
         gDropdownItemsArgs[i] = ScenarioCategoryStringIds[i];
     }
     window_dropdown_show_text_custom_width(
-        w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top,
+        { w->windowPos.x + dropdownWidget->left, w->windowPos.y + dropdownWidget->top },
         dropdownWidget->bottom - dropdownWidget->top + 1, w->colours[1], 0, DROPDOWN_FLAG_STAY_OPEN, 5,
         dropdownWidget->right - dropdownWidget->left - 3);
     dropdown_set_checked(gS6Info.category, true);
@@ -716,14 +718,14 @@ static void window_editor_objective_options_main_dropdown(rct_window* w, rct_wid
     {
         case WIDX_OBJECTIVE_DROPDOWN:
             // TODO: Don't rely on string ID order
-            newObjectiveType = (uint8_t)(gDropdownItemsArgs[dropdownIndex] - STR_OBJECTIVE_DROPDOWN_NONE);
+            newObjectiveType = static_cast<uint8_t>(gDropdownItemsArgs[dropdownIndex] - STR_OBJECTIVE_DROPDOWN_NONE);
             if (gScenarioObjectiveType != newObjectiveType)
                 window_editor_objective_options_set_objective(w, newObjectiveType);
             break;
         case WIDX_CATEGORY_DROPDOWN:
-            if (gS6Info.category != (uint8_t)dropdownIndex)
+            if (gS6Info.category != static_cast<uint8_t>(dropdownIndex))
             {
-                gS6Info.category = (uint8_t)dropdownIndex;
+                gS6Info.category = static_cast<uint8_t>(dropdownIndex);
                 w->Invalidate();
             }
             break;
@@ -956,9 +958,10 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
         auto& park = OpenRCT2::GetContext()->GetGameState()->GetPark();
         auto parkName = park.Name.c_str();
 
-        set_format_arg(0, rct_string_id, STR_STRING);
-        set_format_arg(2, const char*, parkName);
-        gfx_draw_string_left_clipped(dpi, STR_WINDOW_PARK_NAME, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
+        auto ft = Formatter::Common();
+        ft.Add<rct_string_id>(STR_STRING);
+        ft.Add<const char*>(parkName);
+        gfx_draw_string_left_clipped(dpi, STR_WINDOW_PARK_NAME, gCommonFormatArgs, COLOUR_BLACK, { x, y }, width);
     }
 
     // Scenario name
@@ -966,10 +969,10 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
     y = w->windowPos.y + w->widgets[WIDX_SCENARIO_NAME].top;
     width = w->widgets[WIDX_SCENARIO_NAME].left - 16;
 
-    set_format_arg(0, rct_string_id, STR_STRING);
-    set_format_arg(2, const char*, gS6Info.name);
-
-    gfx_draw_string_left_clipped(dpi, STR_WINDOW_SCENARIO_NAME, gCommonFormatArgs, COLOUR_BLACK, x, y, width);
+    auto ft = Formatter::Common();
+    ft.Add<rct_string_id>(STR_STRING);
+    ft.Add<const char*>(gS6Info.name);
+    gfx_draw_string_left_clipped(dpi, STR_WINDOW_SCENARIO_NAME, gCommonFormatArgs, COLOUR_BLACK, { x, y }, width);
 
     // Scenario details label
     x = w->windowPos.x + 8;
@@ -981,10 +984,10 @@ static void window_editor_objective_options_main_paint(rct_window* w, rct_drawpi
     y = w->windowPos.y + w->widgets[WIDX_DETAILS].top + 10;
     width = w->widgets[WIDX_DETAILS].left - 4;
 
-    set_format_arg(0, rct_string_id, STR_STRING);
-    set_format_arg(2, const char*, gS6Info.details);
-
-    gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, x, y, width, STR_BLACK_STRING, COLOUR_BLACK);
+    ft = Formatter::Common();
+    ft.Add<rct_string_id>(STR_STRING);
+    ft.Add<const char*>(gS6Info.details);
+    gfx_draw_string_left_wrapped(dpi, gCommonFormatArgs, { x, y }, width, STR_BLACK_STRING, COLOUR_BLACK);
 
     // Scenario category label
     x = w->windowPos.x + 8;
@@ -1175,7 +1178,7 @@ static void window_editor_objective_options_rides_scrollpaint(rct_window* w, rct
             {
                 gCurrentFontSpriteBase = stringId == STR_WINDOW_COLOUR_2_STRINGID ? FONT_SPRITE_BASE_MEDIUM_EXTRA_DARK
                                                                                   : FONT_SPRITE_BASE_MEDIUM_DARK;
-                gfx_draw_string(dpi, static_cast<const char*>(CheckBoxMarkString), w->colours[1] & 0x7F, 2, y);
+                gfx_draw_string(dpi, static_cast<const char*>(CheckBoxMarkString), w->colours[1] & 0x7F, { 2, y });
             }
 
             // Ride name

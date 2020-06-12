@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -54,6 +54,13 @@ public:
     {
     }
 
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit("type", _cheatType);
+        visitor.Visit("param1", _param1);
+        visitor.Visit("param2", _param2);
+    }
+
     uint16_t GetActionFlags() const override
     {
         return GameAction::GetActionFlags() | GA_FLAGS::ALLOW_WHILE_PAUSED;
@@ -97,6 +104,8 @@ public:
                 break;
             case CheatType::DisableClearanceChecks:
                 gCheatsDisableClearanceChecks = _param1 != 0;
+                // Required to update the clearance checks overlay on the Cheats button.
+                window_invalidate_by_class(WC_TOP_TOOLBAR);
                 break;
             case CheatType::DisableSupportLimits:
                 gCheatsDisableSupportLimits = _param1 != 0;
@@ -237,6 +246,9 @@ public:
             case CheatType::RemoveDucks:
                 duck_remove_all();
                 break;
+            case CheatType::AllowTrackPlaceInvalidHeights:
+                gCheatsAllowTrackPlaceInvalidHeights = _param1 != 0;
+                break;
             default:
             {
                 log_error("Unabled cheat: %d", _cheatType.id);
@@ -330,9 +342,9 @@ private:
                     case GUEST_PARAMETER_NAUSEA_TOLERANCE:
                         return { { GUEST_PARAMETER_HAPPINESS, GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY },
                                  { PEEP_NAUSEA_TOLERANCE_NONE, PEEP_NAUSEA_TOLERANCE_HIGH } };
-                    case GUEST_PARAMETER_BATHROOM:
+                    case GUEST_PARAMETER_TOILET:
                         return { { GUEST_PARAMETER_HAPPINESS, GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY },
-                                 { 0, PEEP_MAX_BATHROOM } };
+                                 { 0, PEEP_MAX_TOILET } };
                     case GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY:
                         return { { GUEST_PARAMETER_HAPPINESS, GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY }, { 0, 255 } };
                     default:
@@ -578,7 +590,7 @@ private:
                     if (value > 0)
                     {
                         peep->peep_flags &= ~PEEP_FLAGS_ANGRY;
-                        peep->angriness = 0;
+                        peep->Angriness = 0;
                     }
                     break;
                 case GUEST_PARAMETER_ENERGY:
@@ -598,11 +610,11 @@ private:
                 case GUEST_PARAMETER_NAUSEA_TOLERANCE:
                     peep->nausea_tolerance = value;
                     break;
-                case GUEST_PARAMETER_BATHROOM:
+                case GUEST_PARAMETER_TOILET:
                     peep->toilet = value;
                     break;
                 case GUEST_PARAMETER_PREFERRED_RIDE_INTENSITY:
-                    peep->intensity = (15 << 4) | value;
+                    peep->intensity = IntensityRange(value, 15);
                     break;
             }
             peep->UpdateSpriteType();
@@ -623,16 +635,16 @@ private:
                     peep->cash_in_pocket = MONEY(1000, 00);
                     break;
                 case OBJECT_PARK_MAP:
-                    peep->item_standard_flags |= PEEP_ITEM_MAP;
+                    peep->ItemStandardFlags |= PEEP_ITEM_MAP;
                     break;
                 case OBJECT_BALLOON:
-                    peep->item_standard_flags |= PEEP_ITEM_BALLOON;
-                    peep->balloon_colour = scenario_rand_max(COLOUR_COUNT - 1);
+                    peep->ItemStandardFlags |= PEEP_ITEM_BALLOON;
+                    peep->BalloonColour = scenario_rand_max(COLOUR_COUNT - 1);
                     peep->UpdateSpriteType();
                     break;
                 case OBJECT_UMBRELLA:
-                    peep->item_standard_flags |= PEEP_ITEM_UMBRELLA;
-                    peep->umbrella_colour = scenario_rand_max(COLOUR_COUNT - 1);
+                    peep->ItemStandardFlags |= PEEP_ITEM_UMBRELLA;
+                    peep->UmbrellaColour = scenario_rand_max(COLOUR_COUNT - 1);
                     peep->UpdateSpriteType();
                     break;
             }
@@ -642,7 +654,7 @@ private:
 
     void RemoveAllGuests() const
     {
-        uint16_t spriteIndex, nextSpriteIndex;
+        uint16_t spriteIndex;
         for (auto& ride : GetRideManager())
         {
             ride.num_riders = 0;
@@ -685,10 +697,12 @@ private:
             }
         }
 
-        for (spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP]; spriteIndex != SPRITE_INDEX_NULL; spriteIndex = nextSpriteIndex)
+        // Do not use the FOR_ALL_PEEPS macro for this as next sprite index
+        // will be fetched on a deleted peep.
+        for (spriteIndex = gSpriteListHead[SPRITE_LIST_PEEP]; spriteIndex != SPRITE_INDEX_NULL;)
         {
-            auto peep = &(get_sprite(spriteIndex)->peep);
-            nextSpriteIndex = peep->next;
+            auto peep = GET_PEEP(spriteIndex);
+            spriteIndex = peep->next;
             if (peep->type == PEEP_TYPE_GUEST)
             {
                 peep->Remove();

@@ -162,7 +162,7 @@ static paint_struct* sub_9819_c(
 void paint_session_generate(paint_session* session)
 {
     rct_drawpixelinfo* dpi = &session->DPI;
-    LocationXY16 mapTile = { (int16_t)(dpi->x & 0xFFE0), (int16_t)((dpi->y - 16) & 0xFFE0) };
+    LocationXY16 mapTile = { static_cast<int16_t>(dpi->x & 0xFFE0), static_cast<int16_t>((dpi->y - 16) & 0xFFE0) };
 
     int16_t half_x = mapTile.x >> 1;
     uint16_t num_vertical_quadrants = (dpi->height + 2128) >> 5;
@@ -714,8 +714,8 @@ paint_struct* sub_98196C(
     paint_session* session, uint32_t image_id, int8_t x_offset, int8_t y_offset, int16_t bound_box_length_x,
     int16_t bound_box_length_y, int8_t bound_box_length_z, int16_t z_offset)
 {
-    assert((uint16_t)bound_box_length_x == (int16_t)bound_box_length_x);
-    assert((uint16_t)bound_box_length_y == (int16_t)bound_box_length_y);
+    assert(static_cast<uint16_t>(bound_box_length_x) == static_cast<int16_t>(bound_box_length_x));
+    assert(static_cast<uint16_t>(bound_box_length_y) == static_cast<int16_t>(bound_box_length_y));
 
     session->LastRootPS = nullptr;
     session->UnkF1AD2C = nullptr;
@@ -880,7 +880,8 @@ paint_struct* sub_98197C(
 
     session->LastRootPS = ps;
 
-    auto attach = CoordsXY{ (int16_t)ps->bounds.x, (int16_t)ps->bounds.y }.Rotate(session->CurrentRotation);
+    auto attach = CoordsXY{ static_cast<int16_t>(ps->bounds.x), static_cast<int16_t>(ps->bounds.y) }.Rotate(
+        session->CurrentRotation);
     switch (session->CurrentRotation)
     {
         case 0:
@@ -922,8 +923,8 @@ paint_struct* sub_98198C(
     int16_t bound_box_length_y, int8_t bound_box_length_z, int16_t z_offset, int16_t bound_box_offset_x,
     int16_t bound_box_offset_y, int16_t bound_box_offset_z)
 {
-    assert((uint16_t)bound_box_length_x == bound_box_length_x);
-    assert((uint16_t)bound_box_length_y == bound_box_length_y);
+    assert(static_cast<uint16_t>(bound_box_length_x) == static_cast<int16_t>(bound_box_length_x));
+    assert(static_cast<uint16_t>(bound_box_length_y) == static_cast<int16_t>(bound_box_length_y));
 
     session->LastRootPS = nullptr;
     session->UnkF1AD2C = nullptr;
@@ -964,8 +965,8 @@ paint_struct* sub_98199C(
     int16_t bound_box_length_y, int8_t bound_box_length_z, int16_t z_offset, int16_t bound_box_offset_x,
     int16_t bound_box_offset_y, int16_t bound_box_offset_z)
 {
-    assert((uint16_t)bound_box_length_x == (int16_t)bound_box_length_x);
-    assert((uint16_t)bound_box_length_y == (int16_t)bound_box_length_y);
+    assert(static_cast<uint16_t>(bound_box_length_x) == static_cast<int16_t>(bound_box_length_x));
+    assert(static_cast<uint16_t>(bound_box_length_y) == static_cast<int16_t>(bound_box_length_y));
 
     if (session->LastRootPS == nullptr)
     {
@@ -1094,7 +1095,7 @@ void paint_floating_money_effect(
     ps->args[1] = y;
     ps->args[2] = 0;
     ps->args[3] = 0;
-    ps->y_offsets = (uint8_t*)y_offsets;
+    ps->y_offsets = reinterpret_cast<uint8_t*>(y_offsets);
 
     const CoordsXYZ position = {
         session->SpritePosition.x,
@@ -1151,6 +1152,7 @@ void paint_draw_money_structs(rct_drawpixelinfo* dpi, paint_string_struct* ps)
             forceSpriteFont = true;
         }
 
-        gfx_draw_string_with_y_offsets(&dpi2, buffer, COLOUR_BLACK, ps->x, ps->y, (int8_t*)ps->y_offsets, forceSpriteFont);
+        gfx_draw_string_with_y_offsets(
+            &dpi2, buffer, COLOUR_BLACK, ps->x, ps->y, reinterpret_cast<int8_t*>(ps->y_offsets), forceSpriteFont);
     } while ((ps = ps->next) != nullptr);
 }

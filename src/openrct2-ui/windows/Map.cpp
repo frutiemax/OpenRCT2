@@ -38,6 +38,10 @@
 
 constexpr int32_t MAP_WINDOW_MAP_SIZE = MAXIMUM_MAP_SIZE_TECHNICAL * 2;
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_MAP_LABEL;
+static constexpr const int32_t WH = 259;
+static constexpr const int32_t WW = 245;
+
 // Some functions manipulate coordinates on the map. These are the coordinates of the pixels in the
 // minimap. In order to distinguish those from actual coordinates, we use a separate name.
 using MapCoordsXY = TileCoordsXY;
@@ -76,9 +80,7 @@ enum WINDOW_MAP_WIDGET_IDX {
 validate_global_widx(WC_MAP, WIDX_ROTATE_90);
 
 static rct_widget window_map_widgets[] = {
-    { WWT_FRAME,            0,  0,      244,    0,      258,    STR_NONE,                               STR_NONE },
-    { WWT_CAPTION,          0,  1,      243,    1,      14,     STR_MAP_LABEL,                          STR_WINDOW_TITLE_TIP },
-    { WWT_CLOSEBOX,         0,  232,    242,    2,      13,     STR_CLOSE_X,                            STR_CLOSE_WINDOW_TIP },
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,      244,    43,     257,    STR_NONE,                               STR_NONE },
     { WWT_COLOURBTN,        1,  3,      33,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SHOW_PEOPLE_ON_MAP_TIP },
     { WWT_COLOURBTN,        1,  34,     64,     17,     43,     IMAGE_TYPE_REMAP | SPR_TAB,                   STR_SHOW_RIDES_STALLS_ON_MAP_TIP },
@@ -86,7 +88,7 @@ static rct_widget window_map_widgets[] = {
       SPINNER_WIDGETS      (1,  104,    198,    229,    240,    STR_MAP_SIZE_VALUE,                     STR_NONE), // NB: 3 widgets
     { WWT_FLATBTN,          1,  4,      27,     1,      24,     SPR_BUY_LAND_RIGHTS,                    STR_SELECT_PARK_OWNED_LAND_TIP },
     { WWT_FLATBTN,          1,  4,      27,     1,      24,     SPR_PARK_ENTRANCE,                      STR_BUILD_PARK_ENTRANCE_TIP },
-    { WWT_FLATBTN,          1,  28,     51,     1,      24,     (uint32_t) SPR_NONE,                      STR_SET_STARTING_POSITIONS_TIP },
+    { WWT_FLATBTN,          1,  28,     51,     1,      24,     static_cast<uint32_t>(SPR_NONE),        STR_SET_STARTING_POSITIONS_TIP },
     { WWT_IMGBTN,           1,  4,      47,     17,     48,     SPR_LAND_TOOL_SIZE_0,                   STR_NONE },
     { WWT_TRNBTN,           1,  5,      20,     18,     33,     IMAGE_TYPE_REMAP | SPR_LAND_TOOL_DECREASE,    STR_ADJUST_SMALLER_LAND_TIP },
     { WWT_TRNBTN,           1,  31,     46,     32,     47,     IMAGE_TYPE_REMAP | SPR_LAND_TOOL_INCREASE,    STR_ADJUST_LARGER_LAND_TIP },
@@ -812,24 +814,27 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
     window_draw_widgets(w, dpi);
     window_map_draw_tab_images(w, dpi);
 
-    int32_t x = w->windowPos.x + (window_map_widgets[WIDX_LAND_TOOL].left + window_map_widgets[WIDX_LAND_TOOL].right) / 2;
-    int32_t y = w->windowPos.y + (window_map_widgets[WIDX_LAND_TOOL].top + window_map_widgets[WIDX_LAND_TOOL].bottom) / 2;
+    auto screenCoords = ScreenCoordsXY{
+        w->windowPos.x + (window_map_widgets[WIDX_LAND_TOOL].left + window_map_widgets[WIDX_LAND_TOOL].right) / 2,
+        w->windowPos.y + (window_map_widgets[WIDX_LAND_TOOL].top + window_map_widgets[WIDX_LAND_TOOL].bottom) / 2
+    };
 
     // Draw land tool size
     if (widget_is_active_tool(w, WIDX_SET_LAND_RIGHTS) && _landRightsToolSize > MAX_TOOL_SIZE_WITH_SPRITE)
     {
-        gfx_draw_string_centred(dpi, STR_LAND_TOOL_SIZE_VALUE, x, y - 2, COLOUR_BLACK, &_landRightsToolSize);
+        gfx_draw_string_centred(
+            dpi, STR_LAND_TOOL_SIZE_VALUE, screenCoords - ScreenCoordsXY{ 0, 2 }, COLOUR_BLACK, &_landRightsToolSize);
     }
-    y = w->windowPos.y + window_map_widgets[WIDX_LAND_TOOL].bottom + 5;
+    screenCoords.y = w->windowPos.y + window_map_widgets[WIDX_LAND_TOOL].bottom + 5;
 
     // People starting position (scenario editor only)
     if (w->widgets[WIDX_PEOPLE_STARTING_POSITION].type != WWT_EMPTY)
     {
-        x = w->windowPos.x + w->widgets[WIDX_PEOPLE_STARTING_POSITION].left + 12;
-        y = w->windowPos.y + w->widgets[WIDX_PEOPLE_STARTING_POSITION].top + 18;
+        screenCoords = { w->windowPos.x + w->widgets[WIDX_PEOPLE_STARTING_POSITION].left + 12,
+                         w->windowPos.y + w->widgets[WIDX_PEOPLE_STARTING_POSITION].top + 18 };
         gfx_draw_sprite(
             dpi, IMAGE_TYPE_REMAP | IMAGE_TYPE_REMAP_2_PLUS | (COLOUR_LIGHT_BROWN << 24) | (COLOUR_BRIGHT_RED << 19) | SPR_6410,
-            x, y, 0);
+            screenCoords.x, screenCoords.y, 0);
     }
 
     if (!(gScreenFlags & SCREEN_FLAGS_SCENARIO_EDITOR) && !gCheatsSandboxMode)
@@ -837,8 +842,7 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
         // Render the map legend
         if (w->selected_tab == PAGE_RIDES)
         {
-            x = w->windowPos.x + 4;
-            y = w->windowPos.y + w->widgets[WIDX_MAP].bottom + 2;
+            screenCoords = { w->windowPos.x + 4, w->windowPos.y + w->widgets[WIDX_MAP].bottom + 2 };
 
             static rct_string_id mapLabels[] = {
                 STR_MAP_RIDE,       STR_MAP_FOOD_STALL, STR_MAP_DRINK_STALL,  STR_MAP_SOUVENIR_STALL,
@@ -847,13 +851,14 @@ static void window_map_paint(rct_window* w, rct_drawpixelinfo* dpi)
 
             for (uint32_t i = 0; i < std::size(RideKeyColours); i++)
             {
-                gfx_fill_rect(dpi, x, y + 2, x + 6, y + 8, RideKeyColours[i]);
-                gfx_draw_string_left(dpi, mapLabels[i], w, COLOUR_BLACK, x + LIST_ROW_HEIGHT, y);
-                y += LIST_ROW_HEIGHT;
+                gfx_fill_rect(
+                    dpi, screenCoords.x, screenCoords.y + 2, screenCoords.x + 6, screenCoords.y + 8, RideKeyColours[i]);
+                gfx_draw_string_left(dpi, mapLabels[i], w, COLOUR_BLACK, screenCoords.x + LIST_ROW_HEIGHT, screenCoords.y);
+                screenCoords.y += LIST_ROW_HEIGHT;
                 if (i == 3)
                 {
-                    x += 118;
-                    y -= LIST_ROW_HEIGHT * 4;
+                    screenCoords.x += 118;
+                    screenCoords.y -= LIST_ROW_HEIGHT * 4;
                 }
             }
         }
@@ -1552,7 +1557,7 @@ static uint16_t map_window_get_pixel_colour_peep(const CoordsXY& c)
     if (!(surfaceElement->GetOwnership() & OWNERSHIP_OWNED))
         colour = MAP_COLOUR_UNOWNED(colour);
 
-    const int32_t maxSupportedTileElementType = (int32_t)std::size(ElementTypeAddColour);
+    const int32_t maxSupportedTileElementType = static_cast<int32_t>(std::size(ElementTypeAddColour));
     auto tileElement = reinterpret_cast<TileElement*>(surfaceElement);
     while (!(tileElement++)->IsLastForTile())
     {

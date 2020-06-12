@@ -24,6 +24,10 @@
 #include <openrct2/world/Park.h>
 #include <openrct2/world/Surface.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_FOOTPATHS;
+static constexpr const int32_t WH = 381;
+static constexpr const int32_t WW = 106;
+
 // clang-format off
 enum
 {
@@ -67,9 +71,7 @@ enum WINDOW_FOOTPATH_WIDGET_IDX
 };
 
 static rct_widget window_footpath_widgets[] = {
-    {WWT_FRAME,    0, 0,  105, 0,   380, 0xFFFFFFFF,                        STR_NONE},
-    {WWT_CAPTION,  0, 1,  104, 1,   14,  STR_FOOTPATHS,                     STR_WINDOW_TITLE_TIP},
-    {WWT_CLOSEBOX, 0, 93, 103, 2,   13,  STR_CLOSE_X,                       STR_CLOSE_WINDOW_TIP},
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     // Type group
     {WWT_GROUPBOX, 0, 3,  102, 17,  71,  STR_TYPE,                          STR_NONE},
     {WWT_FLATBTN,  1, 6,  52,  30,  65,  0xFFFFFFFF,                        STR_FOOTPATH_TIP},
@@ -575,8 +577,8 @@ static void window_footpath_invalidate(rct_window* w)
         : WWT_EMPTY;
 
     // Set footpath and queue type button images
-    auto pathImage = (uint32_t)SPR_NONE;
-    auto queueImage = (uint32_t)SPR_NONE;
+    auto pathImage = static_cast<uint32_t>(SPR_NONE);
+    auto queueImage = static_cast<uint32_t>(SPR_NONE);
     auto pathEntry = get_path_surface_entry(gFootpathSelectedId);
     if (pathEntry != nullptr)
     {
@@ -594,6 +596,7 @@ static void window_footpath_invalidate(rct_window* w)
  */
 static void window_footpath_paint(rct_window* w, rct_drawpixelinfo* dpi)
 {
+    ScreenCoordsXY screenCoords;
     window_draw_widgets(w, dpi);
 
     if (!(w->disabled_widgets & (1 << WIDX_CONSTRUCT)))
@@ -616,26 +619,29 @@ static void window_footpath_paint(rct_window* w, rct_drawpixelinfo* dpi)
         image += pathType->image;
 
         // Draw construction image
-        int32_t x = w->windowPos.x
-            + (window_footpath_widgets[WIDX_CONSTRUCT].left + window_footpath_widgets[WIDX_CONSTRUCT].right) / 2;
-        int32_t y = w->windowPos.y + window_footpath_widgets[WIDX_CONSTRUCT].bottom - 60;
-        gfx_draw_sprite(dpi, image, x, y, 0);
+        screenCoords = {
+            w->windowPos.x + (window_footpath_widgets[WIDX_CONSTRUCT].left + window_footpath_widgets[WIDX_CONSTRUCT].right) / 2,
+            w->windowPos.y + window_footpath_widgets[WIDX_CONSTRUCT].bottom - 60
+        };
+        gfx_draw_sprite(dpi, image, screenCoords.x, screenCoords.y, 0);
 
         // Draw build this... label
-        x = w->windowPos.x + (window_footpath_widgets[WIDX_CONSTRUCT].left + window_footpath_widgets[WIDX_CONSTRUCT].right) / 2;
-        y = w->windowPos.y + window_footpath_widgets[WIDX_CONSTRUCT].bottom - 23;
-        gfx_draw_string_centred(dpi, STR_BUILD_THIS, x, y, COLOUR_BLACK, nullptr);
+        screenCoords = {
+            w->windowPos.x + (window_footpath_widgets[WIDX_CONSTRUCT].left + window_footpath_widgets[WIDX_CONSTRUCT].right) / 2,
+            w->windowPos.y + window_footpath_widgets[WIDX_CONSTRUCT].bottom - 23
+        };
+        gfx_draw_string_centred(dpi, STR_BUILD_THIS, screenCoords, COLOUR_BLACK, nullptr);
     }
 
     // Draw cost
-    int32_t x = w->windowPos.x
+    screenCoords.x = w->windowPos.x
         + (window_footpath_widgets[WIDX_CONSTRUCT].left + window_footpath_widgets[WIDX_CONSTRUCT].right) / 2;
-    int32_t y = w->windowPos.y + window_footpath_widgets[WIDX_CONSTRUCT].bottom - 12;
+    screenCoords.y = w->windowPos.y + window_footpath_widgets[WIDX_CONSTRUCT].bottom - 12;
     if (_window_footpath_cost != MONEY32_UNDEFINED)
     {
         if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
         {
-            gfx_draw_string_centred(dpi, STR_COST_LABEL, x, y, COLOUR_BLACK, &_window_footpath_cost);
+            gfx_draw_string_centred(dpi, STR_COST_LABEL, screenCoords, COLOUR_BLACK, &_window_footpath_cost);
         }
     }
 }

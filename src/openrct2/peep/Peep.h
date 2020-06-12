@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -18,6 +18,7 @@
 #include "../world/Location.hpp"
 #include "../world/SpriteBase.h"
 
+#include <algorithm>
 #include <bitset>
 #include <optional>
 
@@ -26,7 +27,7 @@
 
 #define PEEP_HUNGER_WARNING_THRESHOLD 25
 #define PEEP_THIRST_WARNING_THRESHOLD 25
-#define PEEP_BATHROOM_WARNING_THRESHOLD 28
+#define PEEP_TOILET_WARNING_THRESHOLD 28
 #define PEEP_LITTER_WARNING_THRESHOLD 23
 #define PEEP_DISGUST_WARNING_THRESHOLD 22
 #define PEEP_VANDALISM_WARNING_THRESHOLD 15
@@ -38,12 +39,13 @@
 #define PEEP_MAX_ENERGY 128
 #define PEEP_MAX_ENERGY_TARGET 255 // Oddly, this differs from max energy!
 #define PEEP_MAX_HUNGER 255
-#define PEEP_MAX_BATHROOM 255
+#define PEEP_MAX_TOILET 255
 #define PEEP_MAX_NAUSEA 255
 #define PEEP_MAX_THIRST 255
 
 constexpr auto PEEP_CLEARANCE_HEIGHT = 4 * COORDS_Z_STEP;
 
+class Formatter;
 struct TileElement;
 struct Ride;
 
@@ -79,7 +81,7 @@ enum PeepThoughtType : uint8_t
     PEEP_THOUGHT_TYPE_TIRED = 19,             // "I'm tired"
     PEEP_THOUGHT_TYPE_HUNGRY = 20,            // "I'm hungry"
     PEEP_THOUGHT_TYPE_THIRSTY = 21,           // "I'm thirsty"
-    PEEP_THOUGHT_TYPE_BATHROOM = 22,          // "I need to go to the bathroom"
+    PEEP_THOUGHT_TYPE_TOILET = 22,            // "I need to go to the toilet"
     PEEP_THOUGHT_TYPE_CANT_FIND = 23,         // "I can't find X"
     PEEP_THOUGHT_TYPE_NOT_PAYING = 24,        // "I'm not paying that much to use X"
     PEEP_THOUGHT_TYPE_NOT_WHILE_RAINING = 25, // "I'm not going on X while it's raining"
@@ -361,7 +363,7 @@ enum PeepFlags : uint32_t
     PEEP_FLAGS_LITTER = (1 << 9),     // Makes the peep throw litter
     PEEP_FLAGS_LOST = (1 << 10),      // Makes the peep feel lost (animation triggered)
     PEEP_FLAGS_HUNGER = (1 << 11),    // Makes the peep become hungry quicker
-    PEEP_FLAGS_BATHROOM = (1 << 12),  // Makes the peep want to go to the bathroom
+    PEEP_FLAGS_TOILET = (1 << 12),    // Makes the peep want to go to the toilet
     PEEP_FLAGS_CROWDED = (1 << 13),   // The peep will start feeling crowded
     PEEP_FLAGS_HAPPINESS = (1 << 14), // The peep will start increasing happiness
     PEEP_FLAGS_NAUSEA = (1 << 15),    // Makes the peep feel sick (e.g. after an extreme ride)
@@ -380,7 +382,7 @@ enum PeepFlags : uint32_t
     PEEP_FLAGS_INTAMIN_DEPRECATED = (1 << 27),   // Used to make the peep think "I'm so excited - It's an Intamin ride!" while
                                                  // riding on a Intamin ride.
     PEEP_FLAGS_HERE_WE_ARE = (1 << 28),          // Makes the peep think  "...and here we are on X!" while riding a ride
-    PEEP_FLAGS_TWITCH = (1u << 31),              // Added for twitch integration
+    PEEP_FLAGS_TWITCH_DEPRECATED = (1u << 31),   // Formerly used for twitch integration
 };
 
 enum PeepNextFlags
@@ -401,7 +403,7 @@ enum PeepNauseaTolerance
 
 enum PeepItem
 {
-    // item_standard_flags
+    // ItemStandardFlags
     PEEP_ITEM_BALLOON = (1 << 0),
     PEEP_ITEM_TOY = (1 << 1),
     PEEP_ITEM_MAP = (1 << 2),
@@ -487,7 +489,7 @@ enum PeepSpriteType : uint8_t
     PEEP_SPRITE_TYPE_HEAD_DOWN = 26,
     PEEP_SPRITE_TYPE_NAUSEOUS = 27,
     PEEP_SPRITE_TYPE_VERY_NAUSEOUS = 28,
-    PEEP_SPRITE_TYPE_REQUIRE_BATHROOM = 29,
+    PEEP_SPRITE_TYPE_REQUIRE_TOILET = 29,
     PEEP_SPRITE_TYPE_HAT = 30,
     PEEP_SPRITE_TYPE_HOT_DOG = 31,
     PEEP_SPRITE_TYPE_TENTACLE = 32,
@@ -540,6 +542,58 @@ struct rct_peep_thought
 struct Guest;
 struct Staff;
 
+struct IntensityRange
+{
+private:
+    uint8_t _value{};
+
+public:
+    explicit IntensityRange(uint8_t value)
+        : _value(value)
+    {
+    }
+
+    IntensityRange(uint8_t min, uint8_t max)
+        : _value(std::min<uint8_t>(min, 15) | (std::min<uint8_t>(max, 15) << 4))
+    {
+    }
+
+    uint8_t GetMinimum() const
+    {
+        return _value & 0x0F;
+    }
+
+    uint8_t GetMaximum() const
+    {
+        return _value >> 4;
+    }
+
+    IntensityRange WithMinimum(uint8_t value) const
+    {
+        return IntensityRange(value, GetMaximum());
+    }
+
+    IntensityRange WithMaximum(uint8_t value) const
+    {
+        return IntensityRange(GetMinimum(), value);
+    }
+
+    explicit operator uint8_t() const
+    {
+        return _value;
+    }
+
+    friend bool operator==(const IntensityRange& lhs, const IntensityRange& rhs)
+    {
+        return lhs._value == rhs._value;
+    }
+
+    friend bool operator!=(const IntensityRange& lhs, const IntensityRange& rhs)
+    {
+        return lhs._value != rhs._value;
+    }
+};
+
 struct Peep : SpriteBase
 {
     char* name;
@@ -572,7 +626,7 @@ struct Peep : SpriteBase
     uint8_t toilet;
     uint8_t mass;
     uint8_t time_to_consume;
-    uint8_t intensity; // The max intensity is stored in the first 4 bits, and the min intensity in the second 4 bits
+    IntensityRange intensity;
     uint8_t nausea_tolerance;
     uint8_t window_invalidate_flags;
     money16 paid_on_drink;
@@ -655,45 +709,45 @@ struct Peep : SpriteBase
         uint8_t staff_mowing_timeout;
     };
     // 0x3F Sick Count split into lots of 3 with time, 0xC0 Time since last recalc
-    uint8_t disgusting_count;
+    uint8_t DisgustingCount;
     union
     {
-        money16 paid_to_enter;
-        uint16_t staff_lawns_mown;
-        uint16_t staff_rides_fixed;
+        money16 PaidToEnter;
+        uint16_t StaffLawnsMown;
+        uint16_t StaffRidesFixed;
     };
     union
     {
-        money16 paid_on_rides;
-        uint16_t staff_gardens_watered;
-        uint16_t staff_rides_inspected;
+        money16 PaidOnRides;
+        uint16_t StaffGardensWatered;
+        uint16_t StaffRidesInspected;
     };
     union
     {
-        money16 paid_on_food;
-        uint16_t staff_litter_swept;
+        money16 PaidOnFood;
+        uint16_t StaffLitterSwept;
     };
     union
     {
-        money16 paid_on_souvenirs;
-        uint16_t staff_bins_emptied;
+        money16 PaidOnSouvenirs;
+        uint16_t StaffBinsEmptied;
     };
-    uint8_t no_of_food;
-    uint8_t no_of_drinks;
-    uint8_t no_of_souvenirs;
-    uint8_t vandalism_seen; // 0xC0 vandalism thought timeout, 0x3F vandalism tiles seen
-    uint8_t voucher_type;
-    uint8_t voucher_arguments; // ride_id or string_offset_id
-    uint8_t surroundings_thought_timeout;
-    uint8_t angriness;
-    uint8_t time_lost; // the time the peep has been lost when it reaches 254 generates the lost thought
-    uint8_t days_in_queue;
-    uint8_t balloon_colour;
-    uint8_t umbrella_colour;
-    uint8_t hat_colour;
-    uint8_t favourite_ride;
-    uint8_t favourite_ride_rating;
-    uint32_t item_standard_flags;
+    uint8_t AmountOfFood;
+    uint8_t AmountOfDrinks;
+    uint8_t AmountOfSouvenirs;
+    uint8_t VandalismSeen; // 0xC0 vandalism thought timeout, 0x3F vandalism tiles seen
+    uint8_t VoucherType;
+    uint8_t VoucherArguments; // ride_id or string_offset_id
+    uint8_t SurroundingsThoughtTimeout;
+    uint8_t Angriness;
+    uint8_t TimeLost; // the time the peep has been lost when it reaches 254 generates the lost thought
+    uint8_t DaysInQueue;
+    uint8_t BalloonColour;
+    uint8_t UmbrellaColour;
+    uint8_t HatColour;
+    uint8_t FavouriteRide;
+    uint8_t FavouriteRideRating;
+    uint32_t ItemStandardFlags;
 
 public: // Peep
     Guest* AsGuest();
@@ -708,7 +762,7 @@ public: // Peep
     void UpdateCurrentActionSpriteType();
     void SwitchToSpecialSprite(uint8_t special_sprite_id);
     void StateReset();
-    void MoveTo(int16_t destX, int16_t destY, int16_t destZ);
+    void MoveTo(const CoordsXYZ& newLocation);
     uint8_t GetNextDirection() const;
     bool GetNextIsSloped() const;
     bool GetNextIsSurface() const;
@@ -720,7 +774,9 @@ public: // Peep
     void RemoveFromQueue();
     void RemoveFromRide();
     void InsertNewThought(PeepThoughtType thought_type, uint8_t thought_arguments);
+    void FormatActionTo(Formatter&) const;
     void FormatActionTo(void* args) const;
+    void FormatNameTo(Formatter&) const;
     size_t FormatNameTo(void* args) const;
     std::string GetName() const;
     bool SetName(const std::string_view& value);
@@ -837,6 +893,8 @@ public:
     bool IsPatrolAreaSet(const CoordsXY& coords) const;
     bool IsLocationInPatrol(const CoordsXY& loc) const;
     bool DoPathFinding();
+    uint8_t GetCostume() const;
+    void SetCostume(uint8_t value);
 
 private:
     void UpdatePatrolling();
@@ -988,7 +1046,7 @@ void peep_window_state_update(Peep* peep);
 void peep_decrement_num_riders(Peep* peep);
 
 void peep_set_map_tooltip(Peep* peep);
-int32_t peep_compare(const void* sprite_index_a, const void* sprite_index_b);
+int32_t peep_compare(const uint16_t sprite_index_a, const uint16_t sprite_index_b);
 
 void SwitchToSpecialSprite(Peep* peep, uint8_t special_sprite_id);
 void peep_update_names(bool realNames);

@@ -100,7 +100,7 @@ private:
         if (_staffType >= STAFF_TYPE_COUNT)
         {
             // Invalid staff type.
-            log_error("Tried to use invalid staff type: %u", (uint32_t)_staffType);
+            log_error("Tried to use invalid staff type: %u", static_cast<uint32_t>(_staffType));
 
             return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
         }
@@ -115,7 +115,7 @@ private:
             if (_entertainerType >= ENTERTAINER_COSTUME_COUNT)
             {
                 // Invalid entertainer costume
-                log_error("Tried to use invalid entertainer type: %u", (uint32_t)_entertainerType);
+                log_error("Tried to use invalid entertainer type: %u", static_cast<uint32_t>(_entertainerType));
 
                 return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
             }
@@ -124,7 +124,7 @@ private:
             if (!(availableCostumes & (1 << _entertainerType)))
             {
                 // Entertainer costume unavailable
-                log_error("Tried to use unavailable entertainer type: %u", (uint32_t)_entertainerType);
+                log_error("Tried to use unavailable entertainer type: %u", static_cast<uint32_t>(_entertainerType));
 
                 return MakeResult(GA_ERROR::INVALID_PARAMETERS, STR_NONE);
             }
@@ -158,8 +158,6 @@ private:
         }
         else
         {
-            move_sprite_to_list(newPeep, SPRITE_LIST_PEEP);
-
             newPeep->sprite_identifier = 1;
             newPeep->window_invalidate_flags = 0;
             newPeep->action = PEEP_ACTION_NONE_2;
@@ -171,10 +169,11 @@ private:
             newPeep->type = PEEP_TYPE_STAFF;
             newPeep->outside_of_park = 0;
             newPeep->peep_flags = 0;
-            newPeep->paid_to_enter = 0;
-            newPeep->paid_on_rides = 0;
-            newPeep->paid_on_food = 0;
-            newPeep->paid_on_souvenirs = 0;
+            newPeep->PaidToEnter = 0;
+            newPeep->PaidOnRides = 0;
+            newPeep->PaidOnFood = 0;
+            newPeep->PaidOnSouvenirs = 0;
+            newPeep->FavouriteRide = RIDE_ID_NULL;
             newPeep->staff_orders = _staffOrders;
 
             uint16_t idSearchSpriteIndex;
@@ -228,8 +227,7 @@ private:
                 // NOTE: This state is required for the window to act.
                 newPeep->state = PEEP_STATE_PICKED;
 
-                sprite_move(newPeep->x, newPeep->y, newPeep->z, newPeep);
-                invalidate_sprite_2(newPeep);
+                newPeep->MoveTo({ newPeep->x, newPeep->y, newPeep->z });
             }
 
             // Staff uses this
@@ -314,7 +312,7 @@ private:
             // No walking guests; pick random park entrance
             if (!gParkEntrances.empty())
             {
-                auto rand = scenario_rand_max((uint32_t)gParkEntrances.size());
+                auto rand = scenario_rand_max(static_cast<uint32_t>(gParkEntrances.size()));
                 const auto& entrance = gParkEntrances[rand];
                 auto dir = entrance.direction;
                 x = entrance.x;
@@ -333,7 +331,6 @@ private:
             }
         }
 
-        sprite_move(x, y, z + 16, newPeep);
-        invalidate_sprite_2(newPeep);
+        newPeep->MoveTo({ x, y, z + 16 });
     }
 };

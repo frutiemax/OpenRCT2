@@ -25,8 +25,9 @@
 #include <openrct2/world/Scenery.h>
 #include <openrct2/world/Wall.h>
 
-constexpr int32_t WW = 113;
-constexpr int32_t WH = 96;
+static constexpr const rct_string_id WINDOW_TITLE = STR_SIGN;
+static constexpr const int32_t WW = 113;
+static constexpr const int32_t WH = 96;
 
 // clang-format off
 enum WINDOW_SIGN_WIDGET_IDX {
@@ -42,9 +43,7 @@ enum WINDOW_SIGN_WIDGET_IDX {
 
 // 0x9AEE00
 static rct_widget window_sign_widgets[] = {
-        { WWT_FRAME,    0, 0,       WW - 1,     0,          WH - 1,     0xFFFFFFFF,     STR_NONE },                         // panel / background
-        { WWT_CAPTION,  0, 1,       WW - 2,     1,          14,         STR_SIGN,       STR_WINDOW_TITLE_TIP },             // title bar
-        { WWT_CLOSEBOX, 0, WW - 13, WW - 3,     2,          13,         STR_CLOSE_X,    STR_CLOSE_WINDOW_TIP },             // close x button
+        WINDOW_SHIM(WINDOW_TITLE, WW, WH),             // close x button
         { WWT_VIEWPORT, 1, 3,       WW - 26,    17,         WH - 20,    STR_VIEWPORT,   STR_NONE },                         // Viewport
         { WWT_FLATBTN,  1, WW - 25, WW - 2,     19,         42,         SPR_RENAME,     STR_CHANGE_SIGN_TEXT_TIP },         // change sign button
         { WWT_FLATBTN,  1, WW - 25, WW - 2,     67,         90,         SPR_DEMOLISH,   STR_DEMOLISH_SIGN_TIP },            // demolish button
@@ -214,9 +213,8 @@ static void window_sign_mouseup(rct_window* w, rct_widgetindex widgetIndex)
         case WIDX_SIGN_DEMOLISH:
         {
             auto banner = GetBanner(w->number);
-            int32_t x = banner->position.x << 5;
-            int32_t y = banner->position.y << 5;
-            auto tile_element = map_get_first_element_at({ x, y });
+            auto bannerCoords = banner->position.ToCoordsXY();
+            auto tile_element = map_get_first_element_at(bannerCoords);
             if (tile_element == nullptr)
                 return;
             while (1)
@@ -235,7 +233,7 @@ static void window_sign_mouseup(rct_window* w, rct_widgetindex widgetIndex)
             }
 
             auto sceneryRemoveAction = LargeSceneryRemoveAction(
-                { x, y, tile_element->GetBaseZ(), tile_element->GetDirection() },
+                { bannerCoords, tile_element->GetBaseZ(), tile_element->GetDirection() },
                 tile_element->AsLargeScenery()->GetSequenceIndex());
             GameActions::Execute(&sceneryRemoveAction);
             break;
@@ -255,10 +253,10 @@ static void window_sign_mousedown(rct_window* w, rct_widgetindex widgetIndex, rc
     switch (widgetIndex)
     {
         case WIDX_MAIN_COLOUR:
-            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), (uint8_t)w->list_information_type);
+            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), static_cast<uint8_t>(w->list_information_type));
             break;
         case WIDX_TEXT_COLOUR:
-            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), (uint8_t)w->var_492);
+            window_dropdown_show_colour(w, widget, TRANSLUCENT(w->colours[1]), static_cast<uint8_t>(w->var_492));
             break;
     }
 }
@@ -458,9 +456,8 @@ static void window_sign_small_mouseup(rct_window* w, rct_widgetindex widgetIndex
         case WIDX_SIGN_DEMOLISH:
         {
             auto banner = GetBanner(w->number);
-            int32_t x = banner->position.x << 5;
-            int32_t y = banner->position.y << 5;
-            auto tile_element = map_get_first_element_at({ x, y });
+            auto bannerCoords = banner->position.ToCoordsXY();
+            auto tile_element = map_get_first_element_at(bannerCoords);
             if (tile_element == nullptr)
                 return;
             while (true)
@@ -476,7 +473,7 @@ static void window_sign_small_mouseup(rct_window* w, rct_widgetindex widgetIndex
                 }
                 tile_element++;
             }
-            CoordsXYZD wallLocation = { x, y, tile_element->GetBaseZ(), tile_element->GetDirection() };
+            CoordsXYZD wallLocation = { bannerCoords, tile_element->GetBaseZ(), tile_element->GetDirection() };
             auto wallRemoveAction = WallRemoveAction(wallLocation);
             GameActions::Execute(&wallRemoveAction);
             break;

@@ -260,7 +260,7 @@ public:
             }
 
             auto banner = GetBanner(_bannerId);
-            if (banner->type != BANNER_NULL)
+            if (!banner->IsNull())
             {
                 log_error("No free banners available");
                 return std::make_unique<WallPlaceActionResult>(GA_ERROR::NO_FREE_ELEMENTS);
@@ -351,7 +351,7 @@ public:
             }
 
             auto banner = GetBanner(_bannerId);
-            if (banner->type != BANNER_NULL)
+            if (!banner->IsNull())
             {
                 log_error("No free banners available");
                 return std::make_unique<WallPlaceActionResult>(GA_ERROR::NO_FREE_ELEMENTS);
@@ -462,7 +462,7 @@ private:
             return false;
         }
 
-        if (RideGroupManager::RideTypeHasRideGroups(ride->type))
+        if (RideTypeDescriptors[ride->type].HasFlag(RIDE_TYPE_FLAG_HAS_RIDE_GROUPS))
         {
             auto rideEntry = get_ride_entry(ride->subtype);
             if (rideEntry == nullptr)
@@ -479,7 +479,7 @@ private:
                 return false;
             }
         }
-        else if (!(RideData4[ride->type].flags & RIDE_TYPE_FLAG4_ALLOW_DOORS_ON_TRACK))
+        else if (!(RideTypeDescriptors[ride->type].Flags & RIDE_TYPE_FLAG_ALLOW_DOORS_ON_TRACK))
         {
             return false;
         }

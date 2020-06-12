@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -409,6 +409,8 @@ private:
     {
         size_t researchListCount;
         const rct1_research_item* researchList = GetResearchList(&researchListCount);
+        std::bitset<RCT1_RIDE_TYPE_COUNT> rideTypeInResearch = GetRideTypesPresentInResearchList(
+            researchList, researchListCount);
         for (size_t i = 0; i < researchListCount; i++)
         {
             const rct1_research_item* researchItem = &researchList[i];
@@ -434,7 +436,12 @@ private:
                     AddEntryForRideType(researchItem->item);
                     break;
                 case RCT1_RESEARCH_TYPE_VEHICLE:
-                    AddEntryForVehicleType(researchItem->related_ride, researchItem->item);
+                    // For some bizarre reason, RCT1 research lists contain vehicles that aren't actually researched.
+                    // Extra bizarrely, this does not seem to apply to Loopy Landscapes saves/scenarios.
+                    if (rideTypeInResearch[researchItem->related_ride] || _gameVersion == FILE_VERSION_RCT1_LL)
+                    {
+                        AddEntryForVehicleType(researchItem->related_ride, researchItem->item);
+                    }
                     break;
             }
         }
@@ -527,7 +534,7 @@ private:
                             EntryList* entries = GetEntryList(objectType);
 
                             // Check if there are spare entries available
-                            size_t maxEntries = (size_t)object_entry_group_counts[objectType];
+                            size_t maxEntries = static_cast<size_t>(object_entry_group_counts[objectType]);
                             if (entries != nullptr && entries->GetCount() < maxEntries)
                             {
                                 entries->GetOrAddEntry(objectName);
@@ -930,8 +937,8 @@ private:
 
         // Finance / customers
         dst->upkeep_cost = src->upkeep_cost;
-        dst->price = src->price;
-        dst->price_secondary = src->price_secondary;
+        dst->price[0] = src->price;
+        dst->price[1] = src->price_secondary;
         dst->income_per_hour = src->income_per_hour;
         dst->total_customers = src->total_customers;
         dst->profit = src->profit;
@@ -1115,17 +1122,14 @@ private:
                 rct1_vehicle* srcVehicle = &_s4.sprites[i].vehicle;
                 if (srcVehicle->x != LOCATION_NULL)
                 {
-                    Vehicle* vehicle = (Vehicle*)create_sprite(SPRITE_IDENTIFIER_VEHICLE);
+                    // If vehicle is the first car on a train add to train list
+                    auto llt = srcVehicle->type == VEHICLE_TYPE_HEAD ? SPRITE_LIST_TRAIN_HEAD : SPRITE_LIST_VEHICLE;
+
+                    Vehicle* vehicle = reinterpret_cast<Vehicle*>(create_sprite(SPRITE_IDENTIFIER_VEHICLE, llt));
                     spriteIndexMap[i] = vehicle->sprite_index;
                     vehicles.push_back(vehicle);
 
                     ImportVehicle(vehicle, srcVehicle);
-
-                    // If vehicle is the first car on a train add to train list
-                    if (vehicle->IsHead())
-                    {
-                        move_sprite_to_list(vehicle, SPRITE_LIST_TRAIN_HEAD);
-                    }
                 }
             }
         }
@@ -1172,9 +1176,9 @@ private:
 
         dst->velocity = src->velocity;
         dst->acceleration = src->acceleration;
-        dst->swing_sprite = src->swing_sprite;
-        dst->swinging_car_var_0 = src->swinging_car_var_0;
-        dst->var_4E = src->var_4E;
+        dst->SwingSprite = src->SwingSprite;
+        dst->SwingPosition = src->SwingPosition;
+        dst->SwingSpeed = src->SwingSpeed;
         dst->restraints_position = src->restraints_position;
         dst->spin_sprite = src->spin_sprite;
         dst->sound_vector_factor = src->sound_vector_factor;
@@ -1242,8 +1246,7 @@ private:
         dst->mini_golf_current_animation = src->mini_golf_current_animation;
         dst->mini_golf_flags = src->mini_golf_flags;
 
-        sprite_move(src->x, src->y, src->z, dst);
-        invalidate_sprite_2(dst);
+        dst->MoveTo({ src->x, src->y, src->z });
 
         dst->num_peeps = src->num_peeps;
         dst->next_free_seat = src->next_free_seat;
@@ -1330,7 +1333,7 @@ private:
             if (_s4.sprites[i].unknown.sprite_identifier == SPRITE_IDENTIFIER_PEEP)
             {
                 rct1_peep* srcPeep = &_s4.sprites[i].peep;
-                Peep* peep = (Peep*)create_sprite(SPRITE_IDENTIFIER_PEEP);
+                Peep* peep = reinterpret_cast<Peep*>(create_sprite(SPRITE_IDENTIFIER_PEEP));
                 spriteIndexMap[i] = peep->sprite_index;
 
                 ImportPeep(peep, srcPeep);
@@ -1341,7 +1344,7 @@ private:
             rct_sprite* sprite = get_sprite(i);
             if (sprite->generic.sprite_identifier == SPRITE_IDENTIFIER_VEHICLE)
             {
-                Vehicle* vehicle = (Vehicle*)sprite;
+                Vehicle* vehicle = reinterpret_cast<Vehicle*>(sprite);
                 FixVehiclePeepLinks(vehicle, spriteIndexMap);
             }
         }
@@ -1401,7 +1404,7 @@ private:
         dst->sprite_height_negative = spriteBounds[dst->action_sprite_type].sprite_height_negative;
         dst->sprite_height_positive = spriteBounds[dst->action_sprite_type].sprite_height_positive;
 
-        sprite_move(src->x, src->y, src->z, dst);
+        dst->MoveTo({ src->x, src->y, src->z });
         invalidate_sprite_2(dst);
 
         dst->sprite_direction = src->sprite_direction;
@@ -1421,23 +1424,23 @@ private:
         dst->var_37 = src->var_37;
         dst->time_to_consume = src->time_to_consume;
         dst->step_progress = src->step_progress;
-        dst->vandalism_seen = src->vandalism_seen;
+        dst->VandalismSeen = src->vandalism_seen;
 
         dst->type = static_cast<PeepType>(src->type);
 
         dst->tshirt_colour = RCT1::GetColour(src->tshirt_colour);
         dst->trousers_colour = RCT1::GetColour(src->trousers_colour);
-        dst->umbrella_colour = RCT1::GetColour(src->umbrella_colour);
-        dst->hat_colour = RCT1::GetColour(src->hat_colour);
+        dst->UmbrellaColour = RCT1::GetColour(src->umbrella_colour);
+        dst->HatColour = RCT1::GetColour(src->hat_colour);
 
         // Balloons were always blue in RCT1 without AA/LL
         if (_gameVersion == FILE_VERSION_RCT1)
         {
-            dst->balloon_colour = COLOUR_LIGHT_BLUE;
+            dst->BalloonColour = COLOUR_LIGHT_BLUE;
         }
         else
         {
-            dst->balloon_colour = RCT1::GetColour(src->balloon_colour);
+            dst->BalloonColour = RCT1::GetColour(src->balloon_colour);
         }
 
         dst->destination_x = src->destination_x;
@@ -1457,9 +1460,9 @@ private:
         dst->mass = src->mass;
 
         dst->litter_count = src->litter_count;
-        dst->disgusting_count = src->disgusting_count;
+        dst->DisgustingCount = src->disgusting_count;
 
-        dst->intensity = src->intensity;
+        dst->intensity = static_cast<IntensityRange>(src->intensity);
         dst->nausea_tolerance = src->nausea_tolerance;
         dst->window_invalidate_flags = 0;
 
@@ -1469,7 +1472,7 @@ private:
         dst->current_car = src->current_car;
         dst->current_seat = src->current_seat;
         dst->time_on_ride = src->time_on_ride;
-        dst->days_in_queue = src->days_in_queue;
+        dst->DaysInQueue = src->days_in_queue;
 
         dst->interaction_ride_index = src->interaction_ride_index;
 
@@ -1481,22 +1484,22 @@ private:
         // This doubles as staff type
         dst->no_of_rides = src->no_of_rides;
 
-        dst->no_of_drinks = src->no_of_drinks;
-        dst->no_of_food = src->no_of_food;
-        dst->no_of_souvenirs = src->no_of_souvenirs;
+        dst->AmountOfDrinks = src->no_of_drinks;
+        dst->AmountOfFood = src->no_of_food;
+        dst->AmountOfSouvenirs = src->no_of_souvenirs;
 
-        dst->paid_to_enter = src->paid_to_enter;
-        dst->paid_on_rides = src->paid_on_rides;
+        dst->PaidToEnter = src->paid_to_enter;
+        dst->PaidOnRides = src->paid_on_rides;
         dst->paid_on_drink = src->paid_on_drink;
-        dst->paid_on_food = src->paid_on_food;
-        dst->paid_on_souvenirs = src->paid_on_souvenirs;
+        dst->PaidOnFood = src->paid_on_food;
+        dst->PaidOnSouvenirs = src->paid_on_souvenirs;
 
-        dst->voucher_arguments = src->voucher_arguments;
-        dst->voucher_type = src->voucher_type;
+        dst->VoucherArguments = src->voucher_arguments;
+        dst->VoucherType = src->voucher_type;
 
-        dst->surroundings_thought_timeout = src->surroundings_thought_timeout;
-        dst->angriness = src->angriness;
-        dst->time_lost = src->time_lost;
+        dst->SurroundingsThoughtTimeout = src->surroundings_thought_timeout;
+        dst->Angriness = src->angriness;
+        dst->TimeLost = src->time_lost;
 
         for (size_t i = 0; i < 32; i++)
         {
@@ -1513,7 +1516,7 @@ private:
         {
             auto srcThought = &src->thoughts[i];
             auto dstThought = &dst->thoughts[i];
-            dstThought->type = (PeepThoughtType)srcThought->type;
+            dstThought->type = static_cast<PeepThoughtType>(srcThought->type);
             dstThought->item = srcThought->type;
             dstThought->freshness = srcThought->freshness;
             dstThought->fresh_timeout = srcThought->fresh_timeout;
@@ -1539,16 +1542,16 @@ private:
         // Set it to N/A if the save comes from the original or AA.
         if (_gameVersion == FILE_VERSION_RCT1_LL)
         {
-            dst->favourite_ride = src->favourite_ride;
-            dst->favourite_ride_rating = src->favourite_ride_rating;
+            dst->FavouriteRide = src->favourite_ride;
+            dst->FavouriteRideRating = src->favourite_ride_rating;
         }
         else
         {
-            dst->favourite_ride = RIDE_ID_NULL;
-            dst->favourite_ride_rating = 0;
+            dst->FavouriteRide = RIDE_ID_NULL;
+            dst->FavouriteRideRating = 0;
         }
 
-        dst->item_standard_flags = src->item_standard_flags;
+        dst->ItemStandardFlags = src->item_standard_flags;
 
         if (dst->type == PEEP_TYPE_GUEST)
         {
@@ -1630,7 +1633,7 @@ private:
             {
                 const auto* srcLitter = &sprite.litter;
 
-                Litter* litter = (Litter*)create_sprite(SPRITE_IDENTIFIER_LITTER);
+                Litter* litter = reinterpret_cast<Litter*>(create_sprite(SPRITE_IDENTIFIER_LITTER));
                 litter->sprite_identifier = srcLitter->sprite_identifier;
                 litter->type = srcLitter->type;
 
@@ -1642,7 +1645,7 @@ private:
                 litter->sprite_height_positive = srcLitter->sprite_height_positive;
                 litter->sprite_height_negative = srcLitter->sprite_height_negative;
 
-                sprite_move(srcLitter->x, srcLitter->y, srcLitter->z, litter);
+                litter->MoveTo({ srcLitter->x, srcLitter->y, srcLitter->z });
                 invalidate_sprite_2(litter);
             }
         }
@@ -1655,7 +1658,7 @@ private:
             if (sprite.unknown.sprite_identifier == SPRITE_IDENTIFIER_MISC)
             {
                 rct1_unk_sprite* src = &sprite.unknown;
-                SpriteGeneric* dst = (SpriteGeneric*)create_sprite(SPRITE_IDENTIFIER_MISC);
+                SpriteGeneric* dst = reinterpret_cast<SpriteGeneric*>(create_sprite(SPRITE_IDENTIFIER_MISC));
                 dst->sprite_identifier = src->sprite_identifier;
                 dst->type = src->type;
                 dst->flags = src->flags;
@@ -1664,15 +1667,15 @@ private:
                 dst->sprite_height_negative = src->sprite_height_negative;
                 dst->sprite_height_positive = src->sprite_height_positive;
 
-                sprite_move(src->x, src->y, src->z, dst);
+                dst->MoveTo({ src->x, src->y, src->z });
 
                 switch (src->type)
                 {
                     case SPRITE_MISC_STEAM_PARTICLE:
-                        ImportSteamParticle((SteamParticle*)dst, (SteamParticle*)src);
+                        ImportSteamParticle(reinterpret_cast<SteamParticle*>(dst), reinterpret_cast<SteamParticle*>(src));
                         break;
                     case SPRITE_MISC_MONEY_EFFECT:
-                        ImportMoneyEffect((MoneyEffect*)dst, (MoneyEffect*)src);
+                        ImportMoneyEffect(reinterpret_cast<MoneyEffect*>(dst), reinterpret_cast<MoneyEffect*>(src));
                         break;
                     case SPRITE_MISC_CRASHED_VEHICLE_PARTICLE:
                         break;
@@ -1683,17 +1686,18 @@ private:
                     case SPRITE_MISC_EXPLOSION_FLARE:
                         break;
                     case SPRITE_MISC_JUMPING_FOUNTAIN_WATER:
-                        ImportJumpingFountainWater((JumpingFountain*)dst, (JumpingFountain*)src);
+                        ImportJumpingFountainWater(
+                            reinterpret_cast<JumpingFountain*>(dst), reinterpret_cast<JumpingFountain*>(src));
                         break;
                     case SPRITE_MISC_BALLOON:
-                        ImportBalloon((Balloon*)dst, (Balloon*)src);
+                        ImportBalloon(reinterpret_cast<Balloon*>(dst), reinterpret_cast<Balloon*>(src));
                         break;
                     case SPRITE_MISC_DUCK:
-                        ImportDuck((Duck*)dst, (Duck*)src);
+                        ImportDuck(reinterpret_cast<Duck*>(dst), reinterpret_cast<Duck*>(src));
                         break;
                 }
 
-                sprite_move(src->x, src->y, src->z, dst);
+                dst->MoveTo({ src->x, src->y, src->z });
                 invalidate_sprite_2(dst);
             }
         }
@@ -1701,11 +1705,11 @@ private:
 
     void ImportMoneyEffect(MoneyEffect* dst, MoneyEffect* src)
     {
-        dst->move_delay = src->move_delay;
-        dst->num_movements = src->num_movements;
-        dst->value = src->value;
-        dst->offset_x = src->offset_x;
-        dst->wiggle = src->wiggle;
+        dst->MoveDelay = src->MoveDelay;
+        dst->NumMovements = src->NumMovements;
+        dst->Value = src->Value;
+        dst->OffsetX = src->OffsetX;
+        dst->Wiggle = src->Wiggle;
     }
 
     void ImportSteamParticle(SteamParticle* dst, SteamParticle* src)
@@ -1809,12 +1813,15 @@ private:
         gTotalIncomeFromAdmissions = _s4.admission_total_income;
 
         // TODO marketing campaigns not working
-        for (size_t i = 0; i < ADVERTISING_CAMPAIGN_COUNT; i++)
+        static_assert(
+            std::numeric_limits<uint8_t>::max() > ADVERTISING_CAMPAIGN_COUNT,
+            "Advertising enum bigger than capacity of iterator");
+        for (uint8_t i = 0; i < ADVERTISING_CAMPAIGN_COUNT; i++)
         {
             if (_s4.marketing_status[i] & CAMPAIGN_ACTIVE_FLAG)
             {
                 MarketingCampaign campaign;
-                campaign.Type = (uint8_t)i;
+                campaign.Type = i;
                 campaign.WeeksLeft = _s4.marketing_status[i] & ~CAMPAIGN_ACTIVE_FLAG;
                 if (campaign.Type == ADVERTISING_CAMPAIGN_RIDE_FREE || campaign.Type == ADVERTISING_CAMPAIGN_RIDE)
                 {
@@ -2063,7 +2070,7 @@ private:
                 }
                 else
                 {
-                    uint8_t railingsEntryIndex;
+                    ObjectEntryIndex railingsEntryIndex;
                     switch (src2->GetRCT1SupportType())
                     {
                         case RCT1_PATH_SUPPORT_TYPE_COATED_WOOD:
@@ -2083,10 +2090,10 @@ private:
                 }
 
                 // Additions
-                uint8_t additionType = dst2->GetAddition();
+                ObjectEntryIndex additionType = dst2->GetAddition();
                 if (additionType != RCT1_PATH_ADDITION_NONE)
                 {
-                    uint8_t normalisedType = RCT1::NormalisePathAddition(additionType);
+                    ObjectEntryIndex normalisedType = RCT1::NormalisePathAddition(additionType);
                     entryIndex = _pathAdditionTypeToEntryMap[normalisedType];
                     if (additionType != normalisedType)
                     {
@@ -2485,7 +2492,7 @@ private:
     void ImportParkName()
     {
         std::string parkName = std::string(_s4.scenario_name);
-        if (is_user_string_id((rct_string_id)_s4.park_name_string_index))
+        if (is_user_string_id(static_cast<rct_string_id>(_s4.park_name_string_index)))
         {
             std::string userString = GetUserString(_s4.park_name_string_index);
             if (!userString.empty())
@@ -2548,7 +2555,7 @@ private:
 
                 ResearchItem tmpResearchItem = {};
                 ConvertResearchEntry(&tmpResearchItem, researchItem, researchType);
-                dst->Assoc = (uint32_t)tmpResearchItem.rawValue;
+                dst->Assoc = tmpResearchItem.rawValue;
             }
             else
             {
@@ -2592,7 +2599,7 @@ private:
 
     void ConvertResearchEntry(ResearchItem* dst, uint8_t srcItem, uint8_t srcType)
     {
-        dst->rawValue = RESEARCH_ITEM_NULL;
+        dst->SetNull();
         if (srcType == RCT1_RESEARCH_TYPE_RIDE)
         {
             auto entryIndex = _rideTypeToRideEntryMap[srcItem];
@@ -2603,11 +2610,12 @@ private:
 
                 if (rideEntry != nullptr)
                 {
+                    auto rideType = ride_entry_get_first_non_null_ride_type(rideEntry);
                     dst->entryIndex = entryIndex;
-                    dst->baseRideType = ride_entry_get_first_non_null_ride_type(rideEntry);
+                    dst->baseRideType = rideType;
                     dst->type = RESEARCH_ENTRY_TYPE_RIDE;
                     dst->flags = 0;
-                    dst->category = rideEntry->category[0];
+                    dst->category = RideTypeDescriptors[rideType].Category;
                 }
             }
         }
@@ -2621,11 +2629,12 @@ private:
 
                 if (rideEntry != nullptr)
                 {
+                    auto rideType = ride_entry_get_first_non_null_ride_type(rideEntry);
                     dst->entryIndex = entryIndex;
-                    dst->baseRideType = ride_entry_get_first_non_null_ride_type(rideEntry);
+                    dst->baseRideType = rideType;
                     dst->type = RESEARCH_ENTRY_TYPE_RIDE;
                     dst->flags = 0;
-                    dst->category = rideEntry->category[0];
+                    dst->category = RideTypeDescriptors[rideType].Category;
                 }
             }
         }

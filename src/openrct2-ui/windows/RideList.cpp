@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -24,6 +24,10 @@
 #include <openrct2/util/Util.h>
 #include <openrct2/windows/Intent.h>
 #include <openrct2/world/Park.h>
+
+static constexpr const rct_string_id WINDOW_TITLE = STR_NONE;
+static constexpr const int32_t WH = 240;
+static constexpr const int32_t WW = 340;
 
 // clang-format off
 enum {
@@ -52,9 +56,7 @@ enum WINDOW_RIDE_LIST_WIDGET_IDX {
 };
 
 static rct_widget window_ride_list_widgets[] = {
-    { WWT_FRAME,            0,  0,      339,    0,      239,    0xFFFFFFFF,                 STR_NONE },                                 // panel / background
-    { WWT_CAPTION,          0,  1,      338,    1,      14,     0xFFFFFFFF,                 STR_WINDOW_TITLE_TIP },                     // title bar
-    { WWT_CLOSEBOX,         0,  327,    337,    2,      13,     STR_CLOSE_X,                STR_CLOSE_WINDOW_TIP },                     // close x button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_RESIZE,           1,  0,      339,    43,     239,    0xFFFFFFFF,                 STR_NONE },                                 // tab page background
     { WWT_FLATBTN,          1,  315,    338,    60,     83,     SPR_TOGGLE_OPEN_CLOSE,      STR_OPEN_OR_CLOSE_ALL_RIDES },              // open / close all toggle
     { WWT_DROPDOWN,         1,  150,    273,    46,     57,     0xFFFFFFFF,                 STR_NONE },                                 // current information type
@@ -320,7 +322,7 @@ static void window_ride_list_mousedown(rct_window* w, rct_widgetindex widgetInde
         gDropdownItemsFormat[0] = STR_CLOSE_ALL;
         gDropdownItemsFormat[1] = STR_OPEN_ALL;
         window_dropdown_show_text(
-            w->windowPos.x + widget->left, w->windowPos.y + widget->top, widget->bottom - widget->top, w->colours[1], 0, 2);
+            { w->windowPos.x + widget->left, w->windowPos.y + widget->top }, widget->bottom - widget->top, w->colours[1], 0, 2);
     }
     else if (widgetIndex == WIDX_INFORMATION_TYPE_DROPDOWN)
     {
@@ -355,7 +357,7 @@ static void window_ride_list_mousedown(rct_window* w, rct_widgetindex widgetInde
         }
 
         window_dropdown_show_text_custom_width(
-            w->windowPos.x + widget->left, w->windowPos.y + widget->top, widget->bottom - widget->top, w->colours[1], 0,
+            { w->windowPos.x + widget->left, w->windowPos.y + widget->top }, widget->bottom - widget->top, w->colours[1], 0,
             DROPDOWN_FLAG_STAY_OPEN, numItems, widget->right - widget->left - 3);
         if (selectedIndex != -1)
         {
@@ -389,12 +391,12 @@ static void window_ride_list_dropdown(rct_window* w, rct_widgetindex widgetIndex
             return;
 
         int32_t informationType = INFORMATION_TYPE_STATUS;
-        uint32_t arg = (uint32_t)gDropdownItemsArgs[dropdownIndex];
+        uint32_t arg = static_cast<uint32_t>(gDropdownItemsArgs[dropdownIndex]);
         for (size_t i = 0; i < std::size(ride_info_type_string_mapping); i++)
         {
             if (arg == ride_info_type_string_mapping[i])
             {
-                informationType = (int32_t)i;
+                informationType = static_cast<int32_t>(i);
             }
         }
 
@@ -510,8 +512,11 @@ static void window_ride_list_invalidate(rct_window* w)
     w->widgets[WIDX_PAGE_BACKGROUND].right = w->width - 1;
     w->widgets[WIDX_PAGE_BACKGROUND].bottom = w->height - 1;
     w->widgets[WIDX_TITLE].right = w->width - 2;
+
+    // if close buttton is on the right then it must move
     w->widgets[WIDX_CLOSE].left = w->width - 13;
     w->widgets[WIDX_CLOSE].right = w->width - 3;
+
     w->widgets[WIDX_LIST].right = w->width - 26;
     w->widgets[WIDX_LIST].bottom = w->height - 15;
     w->widgets[WIDX_OPEN_CLOSE_ALL].right = w->width - 2;
@@ -530,11 +535,11 @@ static void window_ride_list_invalidate(rct_window* w)
         w->widgets[WIDX_OPEN_LIGHT].type = WWT_IMGBTN;
 
         const auto& rideManager = GetRideManager();
-        auto allClosed = false;
+        auto allClosed = true;
         auto allOpen = false;
-        if (std::size(rideManager) != 0)
+        if (w->no_list_items > 0 && std::size(rideManager) != 0)
         {
-            auto c = (RideClassification)w->page;
+            auto c = static_cast<RideClassification>(w->page);
             allClosed = std::none_of(rideManager.begin(), rideManager.end(), [c](const Ride& ride) {
                 return ride.GetClassification() == c && ride.status == RIDE_STATUS_OPEN;
             });
@@ -601,7 +606,7 @@ static void window_ride_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, 
 
         // Ride name
         ride->FormatNameTo(gCommonFormatArgs);
-        gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, 0, y - 1, 159);
+        gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, { 0, y - 1 }, 159);
 
         // Ride information
         auto formatSecondaryEnabled = true;
@@ -660,7 +665,7 @@ static void window_ride_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, 
                 break;
             case INFORMATION_TYPE_AGE:
             {
-                int16_t age = date_get_year(gDateMonthsElapsed - ride->build_date);
+                int16_t age = date_get_year(ride->GetAge());
                 switch (age)
                 {
                     case 0:
@@ -686,7 +691,7 @@ static void window_ride_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, 
                 break;
             case INFORMATION_TYPE_RUNNING_COST:
                 formatSecondary = STR_RIDE_LIST_RUNNING_COST_UNKNOWN;
-                if (ride->upkeep_cost != (money16)(uint16_t)0xFFFF)
+                if (ride->upkeep_cost != MONEY16_UNDEFINED)
                 {
                     formatSecondary = STR_RIDE_LIST_RUNNING_COST_LABEL;
                     set_format_arg(2, int32_t, ride->upkeep_cost * 16);
@@ -739,7 +744,7 @@ static void window_ride_list_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, 
         {
             set_format_arg(0, rct_string_id, formatSecondary);
         }
-        gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, 160, y - 1, 157);
+        gfx_draw_string_left_clipped(dpi, format, gCommonFormatArgs, COLOUR_BLACK, { 160, y - 1 }, 157);
         y += SCROLLABLE_ROW_HEIGHT;
     }
 }
@@ -784,7 +789,7 @@ void window_ride_list_refresh_list(rct_window* w)
     for (auto& ridec : GetRideManager())
     {
         auto ride = &ridec;
-        if (ride->GetClassification() != (RideClassification)w->page
+        if (ride->GetClassification() != static_cast<RideClassification>(w->page)
             || (ride->status == RIDE_STATUS_CLOSED && !ride_has_any_track_elements(ride)))
             continue;
 
@@ -1010,7 +1015,7 @@ static void window_ride_list_close_all(rct_window* w)
 {
     for (auto& ride : GetRideManager())
     {
-        if (ride.status != RIDE_STATUS_CLOSED && ride.GetClassification() == (RideClassification)w->page)
+        if (ride.status != RIDE_STATUS_CLOSED && ride.GetClassification() == static_cast<RideClassification>(w->page))
         {
             ride_set_status(&ride, RIDE_STATUS_CLOSED);
         }
@@ -1021,7 +1026,7 @@ static void window_ride_list_open_all(rct_window* w)
 {
     for (auto& ride : GetRideManager())
     {
-        if (ride.status != RIDE_STATUS_OPEN && ride.GetClassification() == (RideClassification)w->page)
+        if (ride.status != RIDE_STATUS_OPEN && ride.GetClassification() == static_cast<RideClassification>(w->page))
         {
             ride_set_status(&ride, RIDE_STATUS_OPEN);
         }

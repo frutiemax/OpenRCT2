@@ -19,6 +19,8 @@
 #    define HAVE_STD_FILESYSTEM 1
 #elif defined(__APPLE__) // XCode has the header, but reports error when included.
 #    define HAVE_STD_FILESYSTEM 0
+#elif defined(__ANDROID__)
+#    define HAVE_STD_FILESYSTEM 0
 #elif defined(__has_include) // For GCC/Clang check if the header exists.
 #    if __has_include(<filesystem>)
 #        define HAVE_STD_FILESYSTEM 1
@@ -33,7 +35,22 @@
 #    include <filesystem>
 namespace fs = std::filesystem;
 #else
-#    include "../thirdparty/filesystem.hpp"
+#    ifdef _WIN32
+#        ifndef NOMINMAX
+#            define NOMINMAX
+#        endif
+#        ifndef WIN32_LEAN_AND_MEAN
+#            define WIN32_LEAN_AND_MEAN
+#        endif
+#        define BITMAP WIN32_BITMAP
+#    endif
+#    include <filesystem.hpp>
+#    ifdef _WIN32
+#        undef CreateDirectory
+#        undef CreateWindow
+#        undef GetMessage
+#        undef BITMAP
+#    endif
 namespace fs = ghc::filesystem;
 #endif
 

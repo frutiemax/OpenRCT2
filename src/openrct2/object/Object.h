@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -13,6 +13,7 @@
 #include "ImageTable.h"
 #include "StringTable.h"
 
+#include <algorithm>
 #include <optional>
 #include <string_view>
 #include <vector>
@@ -96,19 +97,7 @@ struct rct_object_entry
         return std::string_view(name, std::size(name));
     }
 
-    void SetName(const char* value)
-    {
-        auto src = value;
-        for (size_t i = 0; i < sizeof(name); i++)
-        {
-            auto dc = ' ';
-            if (*src != '\0')
-            {
-                dc = *src++;
-            }
-            name[i] = dc;
-        }
-    }
+    void SetName(const std::string_view& value);
 
     uint8_t GetType() const
     {
@@ -155,6 +144,7 @@ interface IReadObjectContext
 {
     virtual ~IReadObjectContext() = default;
 
+    virtual std::string_view GetObjectIdentifier() abstract;
     virtual IObjectRepository& GetObjectRepository() abstract;
     virtual bool ShouldLoadImages() abstract;
     virtual std::vector<uint8_t> GetData(const std::string_view& path) abstract;
@@ -171,11 +161,12 @@ interface IReadObjectContext
 class Object
 {
 private:
-    char* _identifier;
+    std::string _identifier;
     rct_object_entry _objectEntry{};
     StringTable _stringTable;
     ImageTable _imageTable;
     std::vector<uint8_t> _sourceGames;
+    bool _isJsonObject{};
 
 protected:
     StringTable& GetStringTable()
@@ -197,12 +188,31 @@ protected:
 
 public:
     explicit Object(const rct_object_entry& entry);
-    virtual ~Object();
+    virtual ~Object() = default;
 
-    // Legacy data structures
-    const char* GetIdentifier() const
+    std::string_view GetIdentifier() const
     {
         return _identifier;
+    }
+    void SetIdentifier(const std::string_view& identifier)
+    {
+        _identifier = identifier;
+    }
+
+    void MarkAsJsonObject()
+    {
+        _isJsonObject = true;
+    }
+
+    bool IsJsonObject() const
+    {
+        return _isJsonObject;
+    };
+
+    // Legacy data structures
+    std::string_view GetLegacyIdentifier() const
+    {
+        return _objectEntry.GetName();
     }
     const rct_object_entry* GetObjectEntry() const
     {
@@ -242,6 +252,11 @@ public:
     rct_object_entry GetScgWallsHeader();
     rct_object_entry GetScgPathXHeader();
     rct_object_entry CreateHeader(const char name[9], uint32_t flags, uint32_t checksum);
+
+    uint32_t GetNumImages() const
+    {
+        return GetImageTable().GetCount();
+    }
 };
 #ifdef __WARN_SUGGEST_FINAL_TYPES__
 #    pragma GCC diagnostic pop
@@ -271,5 +286,5 @@ const rct_object_entry* object_list_find(rct_object_entry* entry);
 
 void object_entry_get_name_fixed(utf8* buffer, size_t bufferSize, const rct_object_entry* entry);
 
-void* object_entry_get_chunk(int32_t objectType, size_t index);
-const rct_object_entry* object_entry_get_entry(int32_t objectType, size_t index);
+void* object_entry_get_chunk(int32_t objectType, ObjectEntryIndex index);
+const rct_object_entry* object_entry_get_entry(int32_t objectType, ObjectEntryIndex index);

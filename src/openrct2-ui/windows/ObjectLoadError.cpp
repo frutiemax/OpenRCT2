@@ -112,20 +112,20 @@ private:
             {
                 char str_downloading_objects[256]{};
                 uint8_t args[32]{};
+                Formatter ft(args);
                 if (_downloadStatusInfo.Source.empty())
                 {
-                    set_format_arg_on(args, 0, int16_t, (int16_t)_downloadStatusInfo.Count);
-                    set_format_arg_on(args, 2, int16_t, (int16_t)_downloadStatusInfo.Total);
-                    set_format_arg_on(args, 4, char*, _downloadStatusInfo.Name.c_str());
+                    ft.Add<int16_t>(static_cast<int16_t>(_downloadStatusInfo.Count));
+                    ft.Add<int16_t>(static_cast<int16_t>(_downloadStatusInfo.Total));
+                    ft.Add<char*>(_downloadStatusInfo.Name.c_str());
                     format_string(str_downloading_objects, sizeof(str_downloading_objects), STR_DOWNLOADING_OBJECTS, args);
                 }
                 else
                 {
-                    set_format_arg_on(args, 0, char*, _downloadStatusInfo.Name.c_str());
-                    set_format_arg_on(args, sizeof(char*), char*, _downloadStatusInfo.Source.c_str());
-                    set_format_arg_on(args, sizeof(char*) + sizeof(char*), int16_t, (int16_t)_downloadStatusInfo.Count);
-                    set_format_arg_on(
-                        args, sizeof(char*) + sizeof(char*) + sizeof(int16_t), int16_t, (int16_t)_downloadStatusInfo.Total);
+                    ft.Add<char*>(_downloadStatusInfo.Name.c_str());
+                    ft.Add<char*>(_downloadStatusInfo.Source.c_str());
+                    ft.Add<int16_t>(static_cast<int16_t>(_downloadStatusInfo.Count));
+                    ft.Add<int16_t>(static_cast<int16_t>(_downloadStatusInfo.Total));
                     format_string(str_downloading_objects, sizeof(str_downloading_objects), STR_DOWNLOADING_OBJECTS_FROM, args);
                 }
 
@@ -163,7 +163,7 @@ private:
                     // Check that download operation hasn't been cancelled
                     if (_downloadingObjects)
                     {
-                        auto data = (uint8_t*)response.body.data();
+                        auto data = reinterpret_cast<uint8_t*>(response.body.data());
                         auto dataLen = response.body.size();
 
                         auto& objRepo = OpenRCT2::GetContext()->GetObjectRepository();
@@ -232,7 +232,7 @@ private:
                 }
                 else
                 {
-                    std::printf("  %s query failed (status %d)\n", name.c_str(), (int32_t)response.status);
+                    std::printf("  %s query failed (status %d)\n", name.c_str(), static_cast<int32_t>(response.status));
                     QueueNextDownload();
                 }
             });
@@ -260,9 +260,9 @@ enum WINDOW_OBJECT_LOAD_ERROR_WIDGET_IDX {
     WIDX_DOWNLOAD_ALL
 };
 
-constexpr int32_t WW = 450;
-constexpr int32_t WH = 400;
-constexpr int32_t WW_LESS_PADDING = WW - 5;
+static constexpr const int32_t WW = 450;
+static constexpr const int32_t WH = 400;
+static constexpr const int32_t WW_LESS_PADDING = WW - 5;
 constexpr int32_t NAME_COL_LEFT = 4;
 constexpr int32_t SOURCE_COL_LEFT = (WW_LESS_PADDING / 4) + 1;
 constexpr int32_t TYPE_COL_LEFT = 5 * WW_LESS_PADDING / 8 + 1;
@@ -441,7 +441,7 @@ rct_window* window_object_load_error_open(utf8* path, size_t numMissingObjects, 
     }
 
     // Refresh list items and path
-    window->no_list_items = (uint16_t)numMissingObjects;
+    window->no_list_items = static_cast<uint16_t>(numMissingObjects);
     file_path = path;
 
     window->Invalidate();
@@ -560,13 +560,13 @@ static void window_object_load_error_paint(rct_window* w, rct_drawpixelinfo* dpi
     // Draw explanatory message
     set_format_arg(0, rct_string_id, STR_OBJECT_ERROR_WINDOW_EXPLANATION);
     gfx_draw_string_left_wrapped(
-        dpi, gCommonFormatArgs, w->windowPos.x + 5, w->windowPos.y + 18, WW - 10, STR_BLACK_STRING, COLOUR_BLACK);
+        dpi, gCommonFormatArgs, { w->windowPos.x + 5, w->windowPos.y + 18 }, WW - 10, STR_BLACK_STRING, COLOUR_BLACK);
 
     // Draw file name
     set_format_arg(0, rct_string_id, STR_OBJECT_ERROR_WINDOW_FILE);
     set_format_arg(2, utf8*, file_path.c_str());
     gfx_draw_string_left_clipped(
-        dpi, STR_BLACK_STRING, gCommonFormatArgs, COLOUR_BLACK, w->windowPos.x + 5, w->windowPos.y + 43, WW - 5);
+        dpi, STR_BLACK_STRING, gCommonFormatArgs, COLOUR_BLACK, { w->windowPos.x + 5, w->windowPos.y + 43 }, WW - 5);
 }
 
 static void window_object_load_error_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32_t scrollIndex)
@@ -576,32 +576,40 @@ static void window_object_load_error_scrollpaint(rct_window* w, rct_drawpixelinf
 
     for (int32_t i = 0; i < w->no_list_items; i++)
     {
-        int32_t y = i * SCROLLABLE_ROW_HEIGHT;
-        if (y > dpi->y + dpi->height)
+        ScreenCoordsXY screenCoords;
+        screenCoords.y = i * SCROLLABLE_ROW_HEIGHT;
+        if (screenCoords.y > dpi->y + dpi->height)
             break;
 
-        if (y + SCROLLABLE_ROW_HEIGHT < dpi->y)
+        if (screenCoords.y + SCROLLABLE_ROW_HEIGHT < dpi->y)
             continue;
 
         // If hovering over item, change the color and fill the backdrop.
         if (i == w->selected_list_item)
-            gfx_fill_rect(dpi, 0, y, list_width, y + SCROLLABLE_ROW_HEIGHT - 1, ColourMapA[w->colours[1]].darker);
+            gfx_fill_rect(
+                dpi, 0, screenCoords.y, list_width, screenCoords.y + SCROLLABLE_ROW_HEIGHT - 1,
+                ColourMapA[w->colours[1]].darker);
         else if (i == highlighted_index)
-            gfx_fill_rect(dpi, 0, y, list_width, y + SCROLLABLE_ROW_HEIGHT - 1, ColourMapA[w->colours[1]].mid_dark);
+            gfx_fill_rect(
+                dpi, 0, screenCoords.y, list_width, screenCoords.y + SCROLLABLE_ROW_HEIGHT - 1,
+                ColourMapA[w->colours[1]].mid_dark);
         else if ((i & 1) != 0) // odd / even check
-            gfx_fill_rect(dpi, 0, y, list_width, y + SCROLLABLE_ROW_HEIGHT - 1, ColourMapA[w->colours[1]].light);
+            gfx_fill_rect(
+                dpi, 0, screenCoords.y, list_width, screenCoords.y + SCROLLABLE_ROW_HEIGHT - 1,
+                ColourMapA[w->colours[1]].light);
 
         // Draw the actual object entry's name...
-        gfx_draw_string(dpi, strndup(_invalid_entries[i].name, 8), COLOUR_DARK_GREEN, NAME_COL_LEFT - 3, y);
+        screenCoords.x = NAME_COL_LEFT - 3;
+        gfx_draw_string(dpi, strndup(_invalid_entries[i].name, 8), COLOUR_DARK_GREEN, screenCoords);
 
         // ... source game ...
         rct_string_id sourceStringId = object_manager_get_source_game_string(
             object_entry_get_source_game_legacy(&_invalid_entries[i]));
-        gfx_draw_string_left(dpi, sourceStringId, nullptr, COLOUR_DARK_GREEN, SOURCE_COL_LEFT - 3, y);
+        gfx_draw_string_left(dpi, sourceStringId, nullptr, COLOUR_DARK_GREEN, SOURCE_COL_LEFT - 3, screenCoords.y);
 
         // ... and type
         rct_string_id type = get_object_type_string(&_invalid_entries[i]);
-        gfx_draw_string_left(dpi, type, nullptr, COLOUR_DARK_GREEN, TYPE_COL_LEFT - 3, y);
+        gfx_draw_string_left(dpi, type, nullptr, COLOUR_DARK_GREEN, TYPE_COL_LEFT - 3, screenCoords.y);
     }
 }
 
@@ -626,7 +634,7 @@ static void window_object_load_error_update_list(rct_window* w)
                 _invalid_entries.begin(), _invalid_entries.end(),
                 [de](const rct_object_entry& e) { return std::memcmp(de.name, e.name, sizeof(e.name)) == 0; }),
             _invalid_entries.end());
-        w->no_list_items = (uint16_t)_invalid_entries.size();
+        w->no_list_items = static_cast<uint16_t>(_invalid_entries.size());
     }
 }
 

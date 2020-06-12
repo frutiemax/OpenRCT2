@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -43,6 +43,12 @@ public:
         : _rideIndex(rideIndex)
         , _modifyType(modifyType)
     {
+    }
+
+    void AcceptParameters(GameActionParameterVisitor & visitor) override
+    {
+        visitor.Visit("ride", _rideIndex);
+        visitor.Visit("modifyType", _modifyType);
     }
 
     uint32_t GetCooldownTime() const override
@@ -90,7 +96,8 @@ public:
                     GA_ERROR::DISALLOWED, STR_CANT_REFURBISH_RIDE, STR_RIDE_NOT_YET_EMPTY);
             }
 
-            if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_EVER_BEEN_OPENED) || RideAvailableBreakdowns[ride->type] == 0)
+            if (!(ride->lifecycle_flags & RIDE_LIFECYCLE_EVER_BEEN_OPENED)
+                || RideTypeDescriptors[ride->type].AvailableBreakdowns == 0)
             {
                 return std::make_unique<GameActionResult>(
                     GA_ERROR::DISALLOWED, STR_CANT_REFURBISH_RIDE, STR_CANT_REFURBISH_NOT_NEEDED);
@@ -139,7 +146,7 @@ private:
         for (BannerIndex i = 0; i < MAX_BANNERS; i++)
         {
             auto banner = GetBanner(i);
-            if (banner->type != BANNER_NULL && banner->flags & BANNER_FLAG_LINKED_TO_RIDE && banner->ride_index == _rideIndex)
+            if (!banner->IsNull() && banner->flags & BANNER_FLAG_LINKED_TO_RIDE && banner->ride_index == _rideIndex)
             {
                 banner->flags &= ~BANNER_FLAG_LINKED_TO_RIDE;
                 banner->text = {};
@@ -169,20 +176,20 @@ private:
             }
 
             // remove any free voucher for this ride from peep
-            if (peep->item_standard_flags & PEEP_ITEM_VOUCHER)
+            if (peep->ItemStandardFlags & PEEP_ITEM_VOUCHER)
             {
-                if (peep->voucher_type == VOUCHER_TYPE_RIDE_FREE && peep->voucher_arguments == _rideIndex)
+                if (peep->VoucherType == VOUCHER_TYPE_RIDE_FREE && peep->VoucherArguments == _rideIndex)
                 {
-                    peep->item_standard_flags &= ~(PEEP_ITEM_VOUCHER);
+                    peep->ItemStandardFlags &= ~(PEEP_ITEM_VOUCHER);
                 }
             }
 
             // remove any photos of this ride from peep
-            if (peep->item_standard_flags & PEEP_ITEM_PHOTO)
+            if (peep->ItemStandardFlags & PEEP_ITEM_PHOTO)
             {
                 if (peep->photo1_ride_ref == _rideIndex)
                 {
-                    peep->item_standard_flags &= ~PEEP_ITEM_PHOTO;
+                    peep->ItemStandardFlags &= ~PEEP_ITEM_PHOTO;
                 }
             }
             if (peep->item_extra_flags & PEEP_ITEM_PHOTO2)
@@ -211,9 +218,9 @@ private:
             {
                 peep->guest_heading_to_ride_id = RIDE_ID_NULL;
             }
-            if (peep->favourite_ride == _rideIndex)
+            if (peep->FavouriteRide == _rideIndex)
             {
-                peep->favourite_ride = RIDE_ID_NULL;
+                peep->FavouriteRide = RIDE_ID_NULL;
             }
 
             for (int32_t i = 0; i < PEEP_MAX_THOUGHTS; i++)
@@ -259,6 +266,7 @@ private:
 
         // Refresh windows that display the ride name
         auto windowManager = OpenRCT2::GetContext()->GetUiContext()->GetWindowManager();
+        windowManager->BroadcastIntent(Intent(INTENT_ACTION_REFRESH_CAMPAIGN_RIDE_LIST));
         windowManager->BroadcastIntent(Intent(INTENT_ACTION_REFRESH_RIDE_LIST));
         windowManager->BroadcastIntent(Intent(INTENT_ACTION_REFRESH_GUEST_LIST));
 

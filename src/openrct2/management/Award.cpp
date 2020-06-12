@@ -14,6 +14,7 @@
 #include "../localisation/StringIds.h"
 #include "../peep/Peep.h"
 #include "../ride/Ride.h"
+#include "../ride/RideData.h"
 #include "../scenario/Scenario.h"
 #include "../world/Park.h"
 #include "NewsItem.h"
@@ -319,9 +320,9 @@ static bool award_is_deserved_best_food(int32_t activeAwardTypes)
         auto rideEntry = get_ride_entry(ride.subtype);
         if (rideEntry != nullptr)
         {
-            if (!(shopTypes & (1ULL << rideEntry->shop_item)))
+            if (!(shopTypes & (1ULL << rideEntry->shop_item[0])))
             {
-                shopTypes |= (1ULL << rideEntry->shop_item);
+                shopTypes |= (1ULL << rideEntry->shop_item[0]);
                 uniqueShops++;
             }
         }
@@ -365,9 +366,9 @@ static bool award_is_deserved_worst_food(int32_t activeAwardTypes)
         auto rideEntry = ride.GetRideEntry();
         if (rideEntry != nullptr)
         {
-            if (!(shopTypes & (1ULL << rideEntry->shop_item)))
+            if (!(shopTypes & (1ULL << rideEntry->shop_item[0])))
             {
-                shopTypes |= (1ULL << rideEntry->shop_item);
+                shopTypes |= (1ULL << rideEntry->shop_item[0]);
                 uniqueShops++;
             }
         }
@@ -396,9 +397,9 @@ static bool award_is_deserved_best_restrooms([[maybe_unused]] int32_t activeAwar
 {
     // Count open restrooms
     const auto& rideManager = GetRideManager();
-    auto numRestrooms = (size_t)std::count_if(rideManager.begin(), rideManager.end(), [](const Ride& ride) {
+    auto numRestrooms = static_cast<size_t>(std::count_if(rideManager.begin(), rideManager.end(), [](const Ride& ride) {
         return ride.type == RIDE_TYPE_TOILETS && ride.status == RIDE_STATUS_OPEN;
-    });
+    }));
 
     // At least 4 open restrooms
     if (numRestrooms < 4)
@@ -417,7 +418,7 @@ static bool award_is_deserved_best_restrooms([[maybe_unused]] int32_t activeAwar
         if (peep->outside_of_park != 0)
             continue;
 
-        if (peep->thoughts[0].freshness <= 5 && peep->thoughts[0].type == PEEP_THOUGHT_TYPE_BATHROOM)
+        if (peep->thoughts[0].freshness <= 5 && peep->thoughts[0].type == PEEP_THOUGHT_TYPE_TOILET)
             guestsWhoNeedRestroom++;
     }
     return (guestsWhoNeedRestroom <= 16);

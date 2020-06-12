@@ -26,6 +26,7 @@
 #include <openrct2/world/Scenery.h>
 #include <openrct2/world/SmallScenery.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_NONE;
 constexpr int32_t WINDOW_SCENERY_WIDTH = 634;
 constexpr int32_t WINDOW_SCENERY_HEIGHT = 180;
 constexpr int32_t SCENERY_BUTTON_WIDTH = 66;
@@ -153,9 +154,7 @@ validate_global_widx(WC_SCENERY, WIDX_SCENERY_ROTATE_OBJECTS_BUTTON);
 validate_global_widx(WC_SCENERY, WIDX_SCENERY_EYEDROPPER_BUTTON);
 
 static rct_widget window_scenery_widgets[] = {
-    { WWT_FRAME, 0, 0, 633, 0, 141, 0xFFFFFFFF, STR_NONE },                             // 1                0x009DE298
-    { WWT_CAPTION, 0, 1, 632, 1, 14, 0xFFFFFFFF, STR_WINDOW_TITLE_TIP },                // 2                0x009DE2A8
-    { WWT_CLOSEBOX, 0, 621, 631, 2, 13, STR_CLOSE_X, STR_CLOSE_WINDOW_TIP },            // 4                0x009DE2B8
+    WINDOW_SHIM(WINDOW_TITLE, WINDOW_SCENERY_WIDTH, WINDOW_SCENERY_HEIGHT),
     { WWT_RESIZE, 1, 0, 633, 43, 141, 0xFFFFFFFF, STR_NONE },                           // 8                0x009DE2C8
     { WWT_TAB, 1, 3, 33, 17, 43, 0xFFFFFFFF, STR_STRING_DEFINED_TOOLTIP },                                  // 10               0x009DE2D8
     { WWT_TAB, 1, 34, 64, 17, 43, 0xFFFFFFFF, STR_STRING_DEFINED_TOOLTIP },                                 // 20               0x009DE2E8
@@ -198,12 +197,13 @@ static ScenerySelection window_scenery_tab_entries[SCENERY_WINDOW_TABS][SCENERY_
  * Was part of 0x006DFA00
  * The same code repeated five times for every scenery entry type
  */
-static void init_scenery_entry(rct_scenery_entry* sceneryEntry, const ScenerySelection& selection, uint8_t sceneryTabId)
+static void init_scenery_entry(
+    rct_scenery_entry* sceneryEntry, const ScenerySelection& selection, ObjectEntryIndex sceneryTabId)
 {
     Guard::ArgumentInRange<int32_t>(selection.EntryIndex, 0, WINDOW_SCENERY_TAB_SELECTION_UNDEFINED);
     if (scenery_is_invented(selection) || gCheatsIgnoreResearchStatus)
     {
-        if (sceneryTabId != 0xFF)
+        if (sceneryTabId < SCENERY_WINDOW_TABS)
         {
             for (int32_t i = 0; i < SCENERY_ENTRIES_PER_TAB; i++)
             {
@@ -278,7 +278,7 @@ void window_scenery_init()
     }
 
     // small scenery
-    for (uint16_t sceneryId = 0; sceneryId < MAX_SMALL_SCENERY_OBJECTS; sceneryId++)
+    for (ObjectEntryIndex sceneryId = 0; sceneryId < MAX_SMALL_SCENERY_OBJECTS; sceneryId++)
     {
         rct_scenery_entry* sceneryEntry = get_small_scenery_entry(sceneryId);
         if (sceneryEntry == nullptr)
@@ -288,7 +288,7 @@ void window_scenery_init()
     }
 
     // large scenery
-    for (uint16_t sceneryId = 0; sceneryId < MAX_LARGE_SCENERY_OBJECTS; sceneryId++)
+    for (ObjectEntryIndex sceneryId = 0; sceneryId < MAX_LARGE_SCENERY_OBJECTS; sceneryId++)
     {
         rct_scenery_entry* sceneryEntry = get_large_scenery_entry(sceneryId);
         if (sceneryEntry == nullptr)
@@ -298,7 +298,7 @@ void window_scenery_init()
     }
 
     // walls
-    for (uint16_t sceneryId = 0; sceneryId < MAX_WALL_SCENERY_OBJECTS; sceneryId++)
+    for (ObjectEntryIndex sceneryId = 0; sceneryId < MAX_WALL_SCENERY_OBJECTS; sceneryId++)
     {
         rct_scenery_entry* sceneryEntry = get_wall_entry(sceneryId);
         if (sceneryEntry == nullptr)
@@ -308,7 +308,7 @@ void window_scenery_init()
     }
 
     // banners
-    for (uint16_t sceneryId = 0; sceneryId < MAX_BANNER_OBJECTS; sceneryId++)
+    for (ObjectEntryIndex sceneryId = 0; sceneryId < MAX_BANNER_OBJECTS; sceneryId++)
     {
         rct_scenery_entry* sceneryEntry = get_banner_entry(sceneryId);
         if (sceneryEntry == nullptr)
@@ -318,7 +318,7 @@ void window_scenery_init()
     }
 
     // path bits
-    for (uint16_t sceneryId = 0; sceneryId < MAX_PATH_ADDITION_OBJECTS; sceneryId++)
+    for (ObjectEntryIndex sceneryId = 0; sceneryId < MAX_PATH_ADDITION_OBJECTS; sceneryId++)
     {
         rct_scenery_entry* sceneryEntry = get_footpath_item_entry(sceneryId);
         if (sceneryEntry == nullptr)
@@ -720,15 +720,15 @@ static void window_scenery_dropdown(rct_window* w, rct_widgetindex widgetIndex, 
 
     if (widgetIndex == WIDX_SCENERY_PRIMARY_COLOUR_BUTTON)
     {
-        gWindowSceneryPrimaryColour = (uint8_t)dropdownIndex;
+        gWindowSceneryPrimaryColour = static_cast<colour_t>(dropdownIndex);
     }
     else if (widgetIndex == WIDX_SCENERY_SECONDARY_COLOUR_BUTTON)
     {
-        gWindowScenerySecondaryColour = (uint8_t)dropdownIndex;
+        gWindowScenerySecondaryColour = static_cast<colour_t>(dropdownIndex);
     }
     else if (widgetIndex == WIDX_SCENERY_TERTIARY_COLOUR_BUTTON)
     {
-        gWindowSceneryTertiaryColour = (uint8_t)dropdownIndex;
+        gWindowSceneryTertiaryColour = static_cast<colour_t>(dropdownIndex);
     }
 
     w->Invalidate();
@@ -921,6 +921,8 @@ void window_scenery_scrollmouseover(rct_window* w, int32_t scrollIndex, const Sc
  */
 void window_scenery_tooltip(rct_window* w, rct_widgetindex widgetIndex, rct_string_id* stringId)
 {
+    auto ft = Formatter::Common();
+
     switch (widgetIndex)
     {
         case WIDX_SCENERY_TAB_1:
@@ -942,10 +944,10 @@ void window_scenery_tooltip(rct_window* w, rct_widgetindex widgetIndex, rct_stri
         case WIDX_SCENERY_TAB_17:
         case WIDX_SCENERY_TAB_18:
         case WIDX_SCENERY_TAB_19:
-            set_format_arg(0, rct_string_id, get_scenery_group_entry(widgetIndex - WIDX_SCENERY_TAB_1)->name);
+            ft.Add<rct_string_id>(get_scenery_group_entry(widgetIndex - WIDX_SCENERY_TAB_1)->name);
             break;
         case WIDX_SCENERY_TAB_20:
-            set_format_arg(0, rct_string_id, STR_MISCELLANEOUS);
+            ft.Add<rct_string_id>(STR_MISCELLANEOUS);
             break;
     }
 }
@@ -1171,19 +1173,21 @@ void window_scenery_paint(rct_window* w, rct_drawpixelinfo* dpi)
         price = gSceneryPlaceCost;
     }
 
-    set_format_arg(0, uint32_t, price);
-
     if (!(gParkFlags & PARK_FLAGS_NO_MONEY))
     {
+        auto ft = Formatter::Common();
+        ft.Add<uint32_t>(price);
+
         // -14
         gfx_draw_string_right(
             dpi, STR_COST_LABEL, gCommonFormatArgs, COLOUR_BLACK, w->windowPos.x + w->width - 0x1A,
             w->windowPos.y + w->height - 13);
     }
 
-    set_format_arg(0, rct_string_id, sceneryEntry != nullptr ? sceneryEntry->name : (rct_string_id)STR_UNKNOWN_OBJECT_TYPE);
+    auto ft = Formatter::Common();
+    ft.Add<rct_string_id>(sceneryEntry != nullptr ? sceneryEntry->name : static_cast<rct_string_id>(STR_UNKNOWN_OBJECT_TYPE));
     gfx_draw_string_left_clipped(
-        dpi, STR_BLACK_STRING, gCommonFormatArgs, COLOUR_BLACK, w->windowPos.x + 3, w->windowPos.y + w->height - 13,
+        dpi, STR_BLACK_STRING, gCommonFormatArgs, COLOUR_BLACK, { w->windowPos.x + 3, w->windowPos.y + w->height - 13 },
         w->width - 19);
 }
 

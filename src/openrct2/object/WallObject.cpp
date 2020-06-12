@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -25,7 +25,8 @@ void WallObject::ReadLegacy(IReadObjectContext* context, IStream* stream)
     _legacyType.wall.height = stream->ReadValue<uint8_t>();
     _legacyType.wall.flags2 = stream->ReadValue<uint8_t>();
     _legacyType.wall.price = stream->ReadValue<uint16_t>();
-    _legacyType.wall.scenery_tab_id = stream->ReadValue<uint8_t>();
+    _legacyType.wall.scenery_tab_id = OBJECT_ENTRY_INDEX_NULL;
+    stream->Seek(1, STREAM_SEEK_CURRENT);
     _legacyType.wall.scrolling_mode = stream->ReadValue<uint8_t>();
 
     GetStringTable().Read(context, stream, OBJ_STRING_ID_NAME);
@@ -42,8 +43,8 @@ void WallObject::ReadLegacy(IReadObjectContext* context, IStream* stream)
     }
 
     // Autofix this object (will be turned into an official object later).
-    auto identifier = GetIdentifier();
-    if (String::Equals(identifier, "XXWLBR03"))
+    auto identifier = GetLegacyIdentifier();
+    if (identifier == "XXWLBR03")
     {
         _legacyType.wall.flags2 &= ~WALL_SCENERY_2_DOOR_SOUND_MASK;
         _legacyType.wall.flags2 |= (1u << WALL_SCENERY_2_DOOR_SOUND_SHIFT) & WALL_SCENERY_2_DOOR_SOUND_MASK;
@@ -141,6 +142,7 @@ void WallObject::ReadJson(IReadObjectContext* context, const json_t* root)
         if ((_legacyType.wall.flags & WALL_SCENERY_HAS_SECONDARY_COLOUR)
             || (_legacyType.wall.flags & WALL_SCENERY_HAS_TERNARY_COLOUR))
         {
+            _legacyType.wall.flags |= WALL_SCENERY_HAS_PRIMARY_COLOUR;
             _legacyType.wall.flags2 |= WALL_SCENERY_2_NO_SELECT_PRIMARY_COLOUR;
         }
     }

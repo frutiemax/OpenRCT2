@@ -1,5 +1,5 @@
 /*****************************************************************************
- * Copyright (c) 2014-2019 OpenRCT2 developers
+ * Copyright (c) 2014-2020 OpenRCT2 developers
  *
  * For a complete list of all authors, please refer to contributors.md
  * Interested in contributing? Visit https://github.com/OpenRCT2/OpenRCT2
@@ -19,6 +19,10 @@
 #include <openrct2/sprites.h>
 #include <openrct2/world/Sprite.h>
 
+static constexpr const rct_string_id WINDOW_TITLE = STR_RECENT_MESSAGES;
+static constexpr const int32_t WH = 300;
+static constexpr const int32_t WW = 400;
+
 // clang-format off
 enum WINDOW_NEWS_WIDGET_IDX {
     WIDX_BACKGROUND,
@@ -29,9 +33,7 @@ enum WINDOW_NEWS_WIDGET_IDX {
 };
 
 static rct_widget window_news_widgets[] = {
-    { WWT_FRAME,            0,  0,          399,    0,      299,    0xFFFFFFFF,             STR_NONE },             // panel / background
-    { WWT_CAPTION,          0,  1,          398,    1,      14,     STR_RECENT_MESSAGES,    STR_WINDOW_TITLE_TIP }, // title bar
-    { WWT_CLOSEBOX,         0,  387,        397,    2,      13,     STR_CLOSE_X,            STR_CLOSE_WINDOW_TIP }, // close x button
+    WINDOW_SHIM(WINDOW_TITLE, WW, WH),
     { WWT_FLATBTN,          0,  372,        395,    18,     41,     SPR_TAB_GEARS_0,        STR_NONE },             // settings
     { WWT_SCROLL,           0,  4,          395,    44,     295,    SCROLL_VERTICAL,                        STR_NONE },             // scroll
     { WIDGETS_END },
@@ -148,7 +150,7 @@ static void window_news_update(rct_window* w)
 
     j = w->news.var_480;
     w->news.var_480 = -1;
-    for (i = 11; i < 61; i++)
+    for (i = NEWS_ITEM_HISTORY_START; i < MAX_NEWS_ITEMS; i++)
     {
         if (news_item_is_empty(i))
             return;
@@ -186,7 +188,7 @@ static void window_news_scrollgetsize(rct_window* w, int32_t scrollIndex, int32_
     int32_t itemHeight = window_news_get_item_height();
 
     *height = 0;
-    for (int32_t i = 11; i < 61; i++)
+    for (int32_t i = NEWS_ITEM_HISTORY_START; i < MAX_NEWS_ITEMS; i++)
     {
         if (news_item_is_empty(i))
             break;
@@ -206,7 +208,7 @@ static void window_news_scrollmousedown(rct_window* w, int32_t scrollIndex, cons
 
     buttonIndex = 0;
     auto mutableScreenCoords = screenCoords;
-    for (i = 11; i < 61; i++)
+    for (i = NEWS_ITEM_HISTORY_START; i < MAX_NEWS_ITEMS; i++)
     {
         if (news_item_is_empty(i))
             break;
@@ -236,7 +238,7 @@ static void window_news_scrollmousedown(rct_window* w, int32_t scrollIndex, cons
 
     if (buttonIndex != 0)
     {
-        w->news.var_480 = i - 11;
+        w->news.var_480 = i - NEWS_ITEM_HISTORY_START;
         w->news.var_482 = buttonIndex;
         w->news.var_484 = 4;
         w->Invalidate();
@@ -264,7 +266,7 @@ static void window_news_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32
     int32_t i, x, y, yy, press;
 
     y = 0;
-    for (i = 11; i < 61; i++)
+    for (i = NEWS_ITEM_HISTORY_START; i < MAX_NEWS_ITEMS; i++)
     {
         NewsItem* const newsItem = news_item_get(i);
         if (news_item_is_empty(i))
@@ -288,7 +290,7 @@ static void window_news_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32
 
         // Item text
         utf8* text = newsItem->Text;
-        gfx_draw_string_left_wrapped(dpi, &text, 2, y + lineHeight, 325, STR_BOTTOM_TOOLBAR_NEWS_TEXT, COLOUR_BRIGHT_GREEN);
+        gfx_draw_string_left_wrapped(dpi, &text, { 2, y + lineHeight }, 325, STR_BOTTOM_TOOLBAR_NEWS_TEXT, COLOUR_BRIGHT_GREEN);
 
         // Subject button
         if ((news_type_properties[newsItem->Type] & NEWS_TYPE_HAS_SUBJECT) && !(newsItem->Flags & NEWS_FLAG_HAS_BUTTON))
@@ -299,7 +301,7 @@ static void window_news_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32
             press = 0;
             if (w->news.var_480 != -1)
             {
-                const uint8_t idx = 11 + w->news.var_480;
+                const uint8_t idx = NEWS_ITEM_HISTORY_START + w->news.var_480;
                 news_item_is_valid_idx(idx);
                 if (i == idx && w->news.var_482 == 1)
                     press = INSET_RECT_FLAG_BORDER_INSET;
@@ -320,7 +322,14 @@ static void window_news_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32
                         break;
                     }
 
-                    Peep* peep = GET_PEEP(newsItem->Assoc);
+                    auto sprite = try_get_sprite(newsItem->Assoc);
+                    if (sprite == nullptr)
+                        break;
+
+                    auto peep = sprite->AsPeep();
+                    if (peep == nullptr)
+                        break;
+
                     int32_t clip_x = 10, clip_y = 19;
 
                     // If normal peep set sprite to normal (no food)
@@ -369,7 +378,7 @@ static void window_news_scrollpaint(rct_window* w, rct_drawpixelinfo* dpi, int32
             press = 0;
             if (w->news.var_480 != -1)
             {
-                const uint8_t idx = 11 + w->news.var_480;
+                const uint8_t idx = NEWS_ITEM_HISTORY_START + w->news.var_480;
                 news_item_is_valid_idx(idx);
                 if (i == idx && w->news.var_482 == 2)
                     press = 0x20;

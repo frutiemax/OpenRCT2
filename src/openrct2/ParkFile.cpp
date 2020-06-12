@@ -191,7 +191,11 @@ namespace OpenRCT2
                         if (obj != nullptr)
                         {
                             auto entry = obj->GetObjectEntry();
+<<<<<<< HEAD
                             auto type = (uint16_t)(entry->flags & 0x0F);
+=======
+                            auto type = static_cast<uint16_t>(entry->flags & 0x0F);
+>>>>>>> d38e7652ddb2d821fa8fd8d8fee98fba8ba32fda
                             type |= 0x8000; // Make as legacy object
                             cs.Write(type);
                             cs.Write(std::string_view(entry->name, 8));
@@ -233,7 +237,11 @@ namespace OpenRCT2
 
                 cs.ReadWrite(gScenarioCompletedCompanyValue);
                 if (gScenarioCompletedCompanyValue == MONEY32_UNDEFINED
+<<<<<<< HEAD
                     || gScenarioCompletedCompanyValue == (money32)0x80000001)
+=======
+                    || gScenarioCompletedCompanyValue == COMPANY_VALUE_ON_FAILED_OBJECTIVE)
+>>>>>>> d38e7652ddb2d821fa8fd8d8fee98fba8ba32fda
                 {
                     cs.Write("");
                 }
@@ -531,8 +539,13 @@ namespace OpenRCT2
                     cs.ReadWrite(ride.custom_name);
                     cs.ReadWrite(ride.default_name_number);
 
+<<<<<<< HEAD
                     cs.ReadWrite(ride.price);
                     cs.ReadWrite(ride.price_secondary);
+=======
+                    cs.ReadWrite(ride.price[0]);
+                    cs.ReadWrite(ride.price[1]);
+>>>>>>> d38e7652ddb2d821fa8fd8d8fee98fba8ba32fda
 
                     // Colours
                     cs.ReadWrite(ride.entrance_style);

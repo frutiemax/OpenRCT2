@@ -75,7 +75,7 @@ public:
         }
 
         std::memcpy(buffer, _position, N);
-        _position = (void*)((uintptr_t)_position + N);
+        _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_position) + N);
     }
 
     void Write(const void* buffer, uint64_t length) override;
@@ -93,7 +93,7 @@ public:
         {
             if (_access & MEMORY_ACCESS::OWNER)
             {
-                EnsureCapacity((size_t)nextPosition);
+                EnsureCapacity(static_cast<size_t>(nextPosition));
             }
             else
             {
@@ -102,8 +102,8 @@ public:
         }
 
         std::memcpy(_position, buffer, N);
-        _position = (void*)((uintptr_t)_position + N);
-        _dataSize = std::max<size_t>(_dataSize, (size_t)nextPosition);
+        _position = reinterpret_cast<void*>(reinterpret_cast<uintptr_t>(_position) + N);
+        _dataSize = std::max<size_t>(_dataSize, static_cast<size_t>(nextPosition));
     }
 
     uint64_t TryRead(void* buffer, uint64_t length) override;
