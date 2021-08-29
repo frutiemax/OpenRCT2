@@ -802,6 +802,8 @@
 		E6C71B6165224F65AA87E65B /* RideUseSystem.h in Headers */ = {isa = PBXBuildFile; fileRef = 2DA720D496604387806AC168 /* RideUseSystem.h */; };
 		C8D612EB56BD4214BEC0F7FF /* GroupVector.hpp in Headers */ = {isa = PBXBuildFile; fileRef = F4D523B8782E4C458AF1490D /* GroupVector.hpp */; };
 		B2F44E535BD14A03BE8B9D14 /* ZipStream.hpp in Headers */ = {isa = PBXBuildFile; fileRef = F28A181D311D4E078FDB090C /* ZipStream.hpp */; };
+		4653963391E945D397BCCA0C /* ChangeMapSizeAction.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 76CE81CEAF7F4538976F7C4C /* ChangeMapSizeAction.cpp */; };
+		F1BE1CB5525C4FF794A3F3CE /* ChangeMapSizeAction.h in Headers */ = {isa = PBXBuildFile; fileRef = C49050C073DB4CB980E1EC5A /* ChangeMapSizeAction.h */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -1907,6 +1909,8 @@
 		2DA720D496604387806AC168 /* RideUseSystem.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = RideUseSystem.h; path = src/openrct2/peep/RideUseSystem.h; sourceTree = SOURCE_ROOT; };
 		F4D523B8782E4C458AF1490D /* GroupVector.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = GroupVector.hpp; path = src/openrct2/core/GroupVector.hpp; sourceTree = SOURCE_ROOT; };
 		F28A181D311D4E078FDB090C /* ZipStream.hpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.h; name = ZipStream.hpp; path = src/openrct2/core/ZipStream.hpp; sourceTree = SOURCE_ROOT; };
+		76CE81CEAF7F4538976F7C4C /* ChangeMapSizeAction.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = ChangeMapSizeAction.cpp; path = src/openrct2/actions/ChangeMapSizeAction.cpp; sourceTree = SOURCE_ROOT; };
+		C49050C073DB4CB980E1EC5A /* ChangeMapSizeAction.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = ChangeMapSizeAction.h; path = src/openrct2/actions/ChangeMapSizeAction.h; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -2223,6 +2227,8 @@
 				66A10FC3257F1E2E00DD651A /* WaterRaiseAction.h */,
 				66A10FC7257F1E2E00DD651A /* WaterSetHeightAction.cpp */,
 				66A10FC8257F1E2F00DD651A /* WaterSetHeightAction.h */,
+				76CE81CEAF7F4538976F7C4C /* ChangeMapSizeAction.cpp */,
+				C49050C073DB4CB980E1EC5A /* ChangeMapSizeAction.h */,
 			);
 			path = actions;
 			sourceTree = "<group>";
@@ -3662,6 +3668,7 @@
 				E6C71B6165224F65AA87E65B /* RideUseSystem.h in Headers */,
 				C8D612EB56BD4214BEC0F7FF /* GroupVector.hpp in Headers */,
 				B2F44E535BD14A03BE8B9D14 /* ZipStream.hpp in Headers */,
+				F1BE1CB5525C4FF794A3F3CE /* ChangeMapSizeAction.h in Headers */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -4484,6 +4491,7 @@
 				5B6E418A2F264952BA0CC2F2 /* ScTileElement.cpp in Sources */,
 				6C90BE01D190493295071B23 /* ScTile.cpp in Sources */,
 				258C212125F84FA2B4C3BCAE /* RideUseSystem.cpp in Sources */,
+				4653963391E945D397BCCA0C /* ChangeMapSizeAction.cpp in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
