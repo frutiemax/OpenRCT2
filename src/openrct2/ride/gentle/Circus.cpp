@@ -52,17 +52,17 @@ static void PaintCircus(
 {
     trackSequence = track_map_3x3[direction][trackSequence];
 
-    int32_t edges = edges_3x3[trackSequence];
+    //int32_t edges = edges_3x3[trackSequence];
 
-    wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session.TrackColours[SCHEME_MISC]);
+    //wooden_a_supports_paint_setup(session, (direction & 1), 0, height, session.TrackColours[SCHEME_MISC]);
 
-    const StationObject* stationObject = ride.GetStationObject();
+    //const StationObject* stationObject = ride.GetStationObject();
 
-    track_paint_util_paint_floor(session, edges, session.TrackColours[SCHEME_TRACK], height, floorSpritesCork, stationObject);
+    //track_paint_util_paint_floor(session, edges, session.TrackColours[SCHEME_TRACK], height, floorSpritesCork, stationObject);
 
-    track_paint_util_paint_fences(
-        session, edges, session.MapPosition, trackElement, ride, session.TrackColours[SCHEME_SUPPORTS], height,
-        fenceSpritesRope, session.CurrentRotation);
+    //track_paint_util_paint_fences(
+        //session, edges, session.MapPosition, trackElement, ride, session.TrackColours[SCHEME_SUPPORTS], height,
+        //fenceSpritesRope, session.CurrentRotation);
 
     switch (trackSequence)
     {
@@ -86,7 +86,7 @@ static void PaintCircus(
             break;
     }
 
-    int32_t cornerSegments = 0;
+    /*int32_t cornerSegments = 0;
     switch (trackSequence)
     {
         case 1:
@@ -109,7 +109,7 @@ static void PaintCircus(
 
     paint_util_set_segment_support_height(session, cornerSegments, height + 2, 0x20);
     paint_util_set_segment_support_height(session, SEGMENTS_ALL & ~cornerSegments, 0xFFFF, 0);
-    paint_util_set_general_support_height(session, height + 128, 0x20);
+    paint_util_set_general_support_height(session, height + 128, 0x20);*/
 }
 
 TRACK_PAINT_FUNCTION get_track_paint_function_circus(int32_t trackType)

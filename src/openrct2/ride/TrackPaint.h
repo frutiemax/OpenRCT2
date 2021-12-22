@@ -479,3 +479,7 @@ namespace SingleRailRC
 {
     TRACK_PAINT_FUNCTION GetTrackPaintFunction(int32_t trackType);
 }
+namespace GiantFerrisWheel
+{
+    TRACK_PAINT_FUNCTION GetTrackPaintFunction(int32_t trackType);
+}

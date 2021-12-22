@@ -379,6 +379,7 @@
     <ClInclude Include="ride\gentle\meta\FerrisWheel.h" />
     <ClInclude Include="ride\gentle\meta\FlyingSaucers.h" />
     <ClInclude Include="ride\gentle\meta\GhostTrain.h" />
+    <ClInclude Include="ride\gentle\meta\GiantFerrisWheel.h" />
     <ClInclude Include="ride\gentle\meta\HauntedHouse.h" />
     <ClInclude Include="ride\gentle\meta\Maze.h" />
     <ClInclude Include="ride\gentle\meta\MerryGoRound.h" />
@@ -846,6 +847,7 @@
     <ClCompile Include="ride\gentle\FerrisWheel.cpp" />
     <ClCompile Include="ride\gentle\FlyingSaucers.cpp" />
     <ClCompile Include="ride\gentle\GhostTrain.cpp" />
+    <ClCompile Include="ride\gentle\GiantFerrisWheel.cpp" />
     <ClCompile Include="ride\gentle\HauntedHouse.cpp" />
     <ClCompile Include="ride\gentle\Maze.cpp" />
     <ClCompile Include="ride\gentle\MerryGoRound.cpp" />

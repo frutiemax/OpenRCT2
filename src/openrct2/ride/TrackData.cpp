@@ -12,6 +12,7 @@
 #include "../localisation/StringIds.h"
 #include "Track.h"
 #include "TrackPaint.h"
+#include "../ride/gentle/meta/GiantFerrisWheel.h"
 
 #include <cstdint>
 #include <iterator>
@@ -5709,7 +5710,7 @@ namespace OpenRCT2
             _trackElementDescriptors.reserve(TrackElemType::Count);
 
             TrackElementDescriptor desc;
-            for (int i = 0; i < TrackElemType::Count; i++)
+            for (int i = 0; i < TrackElemType::Count-1; i++)
             {
                 desc.Description = RideConfigurationStringIds[i];
                 desc.AlternativeType = AlternativeTrackTypes[i];
@@ -5731,6 +5732,8 @@ namespace OpenRCT2
                 }
                 _trackElementDescriptors.push_back(desc);
             }
+
+            _trackElementDescriptors.push_back(TestTED);
         }
         const TrackElementDescriptor& GetTrackElementDescriptor(const uint32_t type)
         {

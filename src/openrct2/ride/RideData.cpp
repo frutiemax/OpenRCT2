@@ -85,6 +85,7 @@
 #include "gentle/meta/ObservationTower.h"
 #include "gentle/meta/SpaceRings.h"
 #include "gentle/meta/SpiralSlide.h"
+#include "gentle/meta/GiantFerrisWheel.h"
 #include "shops/meta/CashMachine.h"
 #include "shops/meta/DrinkStall.h"
 #include "shops/meta/FirstAid.h"
@@ -313,6 +314,7 @@ constexpr const RideTypeDescriptor RideTypeDescriptors[RIDE_TYPE_COUNT] = {
     /* RIDE_TYPE_CLASSIC_MINI_ROLLER_COASTER,       */ ClassicMiniRollerCoasterRTD,
     /* RIDE_TYPE_HYBRID_COASTER                     */ HybridCoasterRTD,
     /* RIDE_TYPE_SINGLE_RAIL_ROLLER_COASTER         */ SingleRailRollerCoasterRTD,
+    /* RIDE_TYPE_GIANT_FERRIS_WHEEL*/                  GiantFerrisWheelRTD, 
 };
 
 bool RideTypeDescriptor::HasFlag(uint64_t flag) const

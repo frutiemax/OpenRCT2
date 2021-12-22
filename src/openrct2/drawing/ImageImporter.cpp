@@ -30,10 +30,10 @@ ImportResult ImageImporter::Import(
     const Image& image, int32_t srcX, int32_t srcY, int32_t width, int32_t height, int32_t offsetX, int32_t offsetY,
     IMPORT_FLAGS flags, IMPORT_MODE mode) const
 {
-    if (width > 256 || height > 256)
+    /* if (width > 256 || height > 256)
     {
         throw std::invalid_argument("Only images 256x256 or less are supported.");
-    }
+    }*/
 
     if ((flags & IMPORT_FLAGS::KEEP_PALETTE) && image.Depth != 8)
     {

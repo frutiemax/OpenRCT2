@@ -119,6 +119,7 @@ static constexpr const char RideTypeViewOrder[] = {
     RIDE_TYPE_CIRCUS,
     RIDE_TYPE_GHOST_TRAIN,
     RIDE_TYPE_FLYING_SAUCERS,
+    RIDE_TYPE_GIANT_FERRIS_WHEEL,
 
     // Thrill rides
     RIDE_TYPE_TWIST,
