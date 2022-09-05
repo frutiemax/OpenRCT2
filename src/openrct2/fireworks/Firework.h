@@ -23,7 +23,7 @@ public:
     static constexpr auto cEntityType = EntityType::Firework;
     static Firework* Create(
         const TileCoordsXY& tile, const int32_t height, const std::string& objectId, const colour_t color1,
-        const colour_t color2, const colour_t color3);
+        const colour_t color2, const colour_t color3, uint8_t forme = 0);
     void Update();
     void Paint(paint_session& session, int32_t imageDirection);
 
@@ -33,6 +33,8 @@ public:
     }
 private:
     uint32_t _currentFrame;
+
+    uint8_t forme;
 
     uint32_t _baseImage;
     uint32_t _numFrames;
